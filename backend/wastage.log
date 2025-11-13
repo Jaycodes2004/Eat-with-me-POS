@@ -1,0 +1,3 @@
+{"id":"wst_1762066060540","date":"2025-11-02T06:47:40.472Z","items":[{"inventoryItemId":"cmhguj3sk0001ll0gko247jn6","quantity":100,"reason":"expired"}],"notes":null,"updates":[{"inventoryItemId":"cmhguj3sk0001ll0gko247jn6","quantity":100,"afterStock":100}]}
+{"id":"wst_1762066525553","date":"2025-11-02T06:55:25.538Z","items":[{"inventoryItemId":"cmhguj3sk0001ll0gko247jn6","quantity":10,"reason":"expired"}],"notes":null,"updates":[{"inventoryItemId":"cmhguj3sk0001ll0gko247jn6","quantity":10,"afterStock":90}]}
+{"id":"wst_1762066838345","date":"2025-11-02T07:00:38.334Z","items":[{"inventoryItemId":"cmhguj3sk0001ll0gko247jn6","quantity":50,"reason":"expired"}],"notes":null,"updates":[{"inventoryItemId":"cmhguj3sk0001ll0gko247jn6","quantity":50,"afterStock":240}]}

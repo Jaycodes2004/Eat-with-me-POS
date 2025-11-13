@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Customer" ADD COLUMN     "lastVisit" TIMESTAMP(3),
+ADD COLUMN     "totalOrders" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "visitCount" INTEGER NOT NULL DEFAULT 0;

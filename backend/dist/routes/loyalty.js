@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.loyaltyRoutes = void 0;
+const express_1 = require("express");
+const loyalty_1 = require("../controllers/loyalty");
+const checkPermission_1 = require("../middleware/checkPermission");
+const router = (0, express_1.Router)();
+exports.loyaltyRoutes = router;
+router.get("/rewards", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.getLoyaltyRewards);
+router.post("/rewards", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.createLoyaltyReward);
+router.put("/rewards/:id", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.updateLoyaltyReward);
+router.delete("/rewards/:id", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.deleteLoyaltyReward);
+router.get("/rules", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.getLoyaltyRules);
+router.post("/rules", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.createLoyaltyRule);
+router.put("/rules/:id", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.updateLoyaltyRule);
+router.delete("/rules/:id", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.deleteLoyaltyRule);
+router.get("/members", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.getLoyaltyMembers);
+router.get("/", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.getAllLoyaltyLogs);
+router.get("/:id", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.getCustomerLoyaltyLog);
+router.post("/:id", (0, checkPermission_1.checkPermission)('loyalty'), loyalty_1.addLoyaltyLog);
+//# sourceMappingURL=loyalty.js.map
