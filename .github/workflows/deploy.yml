@@ -36,12 +36,15 @@ jobs:
             git reset --hard
             git clean -fd
             git pull origin main
-            rm -rf node_modules
+            rm -rf node_modules dist
             npm install
             npm install @prisma/client
             npx prisma generate --schema=prisma/master.prisma
             npx prisma generate --schema=prisma/schema.prisma
             npx tsc
+            # --- Copy generated Prisma master client to dist directory ---
+            mkdir -p dist/generated
+            cp -r src/generated/master dist/generated/
             pm2 start dist/server.js --name backend || pm2 restart backend
             pm2 save
           '
