@@ -1,27 +1,46 @@
 name: Deploy to EC2
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy SSH key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Debug Secrets
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USERNAME: ${{ secrets.EC2_USERNAME }}
+        run: |
+          echo "USERNAME=$USERNAME"
+          echo "HOST=$HOST"
+
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/Eat-with-me-POS/backend
+        env:
+          HOST: ${{ secrets.EC2_HOST }}
+          USERNAME: ${{ secrets.EC2_USERNAME }}
+        run: |
+          ssh -i key.pem -o StrictHostKeyChecking=no $USERNAME@$HOST '
+            set -e
+            cd /home/ubuntu/Eat-with-me-POS
             git pull origin main
+            rm -rf node_modules
             npm install
-            npx prisma generate
-            npm run build
-            cp -r src/generated dist/
-            pm2 restart postakel-backend
+            # Ensure @prisma/client is present
+            npm install @prisma/client
+            # Generate Prisma clients for both master and schema
+            npx prisma generate --schema=prisma/master.prisma
+            npx prisma generate --schema=prisma/schema.prisma
+            npx tsc
+            pm2 start dist/server.js --name backend || pm2 restart backend
             pm2 save
+          '
