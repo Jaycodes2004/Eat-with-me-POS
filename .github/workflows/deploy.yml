@@ -33,9 +33,13 @@ jobs:
             set -e
             cd /home/ubuntu/Eat-with-me-POS
             git pull origin main
+            rm -rf node_modules
             npm install
+            # Ensure @prisma/client is present
+            npm install @prisma/client
+            # Generate Prisma clients for both master and schema
             npx prisma generate --schema=prisma/master.prisma
-            npx prisma generate --schema=prisma/tenant.prisma
+            npx prisma generate --schema=prisma/schema.prisma
             npx tsc
             pm2 start dist/server.js --name backend || pm2 restart backend
             pm2 save
