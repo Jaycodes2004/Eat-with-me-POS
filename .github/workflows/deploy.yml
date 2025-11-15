@@ -30,12 +30,13 @@ jobs:
           USERNAME: ${{ secrets.EC2_USERNAME }}
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no $USERNAME@$HOST '
+            set -e
             cd /home/ubuntu/Eat-with-me-POS
             git pull origin main
             npm install
-            npx prisma generate
-            npm run build
-            cp -r ./prisma ./dist
-            pm2 restart backend
+            npx prisma generate --schema=prisma/master.prisma
+            npx prisma generate --schema=prisma/tenant.prisma
+            npx tsc
+            pm2 start dist/server.js --name backend || pm2 restart backend
             pm2 save
           '
