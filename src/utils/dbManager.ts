@@ -1,14 +1,30 @@
 
 // new modules
+
 import { exec } from 'child_process';
 import { PrismaClient as TenantPrismaClient } from '@prisma/client';
 import util from 'util';
+import { getParameter } from './awsSecrets';
 const execPromise = util.promisify(exec);
 // A cache to hold tenant-specific Prisma Client instances
 const prismaClients: { [key: string]: TenantPrismaClient } = {};
 
+// Fetch and set master DB URL from SSM Parameter Store
+export async function setMasterDbUrlFromSSM(paramName: string) {
+  const url = await getParameter(paramName);
+  process.env.DATABASE_URL_MASTER = url;
+}
+
+// Fetch and set tenant DB URL from SSM Parameter Store
+export async function setTenantDbUrlFromSSM(paramName: string) {
+  const url = await getParameter(paramName);
+  process.env.DATABASE_URL_TENANT = url;
+}
+
+
+// Deprecated: Use getTenantPrismaClientWithParams or setTenantDbUrlFromSSM
 export function getTenantPrismaClient(dbName: string): never {
-  throw new Error('getTenantPrismaClient now requires DB connection params. Use getTenantPrismaClientWithParams instead.');
+  throw new Error('getTenantPrismaClient now requires DB connection params. Use getTenantPrismaClientWithParams or setTenantDbUrlFromSSM instead.');
 }
 
 /**
@@ -18,11 +34,14 @@ export function getTenantPrismaClient(dbName: string): never {
  */
 // Use getTenantPrismaClientWithParams instead
 
+
 export function getTenantPrismaClientWithParams(dbName: string, dbUser: string, dbPass: string, dbHost: string, dbPort: string): TenantPrismaClient {
   if (prismaClients[dbName]) {
     return prismaClients[dbName];
   }
   const databaseUrl = `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+  // Optionally set env for Prisma
+  process.env.DATABASE_URL_TENANT = databaseUrl;
   const client = new TenantPrismaClient({
     datasources: {
       db: {
@@ -47,9 +66,13 @@ export async function createTenantDatabaseAndUser(dbName: string, tenantDbUser: 
 
 /**
  * Runs 'prisma migrate deploy' for a specific tenant's database.
+ * Optionally fetches DB URL from SSM if paramName is provided.
  */
-export async function runMigrationsForTenant(dbName: string, dbUser: string, dbPass: string, dbHost: string, dbPort: string) {
-  const databaseUrl = `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+export async function runMigrationsForTenant(dbName: string, dbUser: string, dbPass: string, dbHost: string, dbPort: string, paramName?: string) {
+  let databaseUrl = `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+  if (paramName) {
+    databaseUrl = await getParameter(paramName);
+  }
   const command = `npx prisma migrate deploy --schema=./prisma/schema.prisma`;
   await execPromise(command, {
     env: {
