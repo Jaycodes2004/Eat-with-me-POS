@@ -24,7 +24,16 @@ export async function setMasterDbUrlFromSSM(paramName: string) {
   process.env.DATABASE_URL_MASTER = url;
 }
 
-// Fetch and set tenant DB URL from SSM Parameter Store
+
+// Fetch and set tenant DB URL from AWS Secrets Manager
+export async function setTenantDbUrlFromSecretsManager(secretId: string, dbName: string) {
+  const secret = await getSecret(secretId);
+  // secret should contain username, password, host, port
+  const url = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName}?schema=public`;
+  process.env.DATABASE_URL_TENANT = url;
+}
+
+// (Retain SSM method for backward compatibility)
 export async function setTenantDbUrlFromSSM(paramName: string) {
   const url = await getParameter(paramName);
   process.env.DATABASE_URL_TENANT = url;
