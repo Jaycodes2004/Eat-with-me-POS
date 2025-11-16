@@ -4,12 +4,21 @@
 import { exec } from 'child_process';
 import { PrismaClient as TenantPrismaClient } from '@prisma/client';
 import util from 'util';
-import { getParameter } from './awsSecrets';
+import { getParameter, getSecret } from './awsSecrets';
 const execPromise = util.promisify(exec);
 // A cache to hold tenant-specific Prisma Client instances
 const prismaClients: { [key: string]: TenantPrismaClient } = {};
 
-// Fetch and set master DB URL from SSM Parameter Store
+
+// Fetch and set master DB URL from AWS Secrets Manager (recommended for RDS)
+export async function setMasterDbUrlFromSecretsManager(secretId: string, dbName: string) {
+  const secret = await getSecret(secretId);
+  // secret should contain username, password, host, port
+  const url = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName}?schema=public`;
+  process.env.DATABASE_URL_MASTER = url;
+}
+
+// (Retain SSM method for backward compatibility)
 export async function setMasterDbUrlFromSSM(paramName: string) {
   const url = await getParameter(paramName);
   process.env.DATABASE_URL_MASTER = url;
