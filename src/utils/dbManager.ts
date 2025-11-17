@@ -4,45 +4,62 @@
 import { exec } from 'child_process';
 import { PrismaClient as TenantPrismaClient } from '@prisma/client';
 import util from 'util';
-import { getParameter, getSecret } from './awsSecrets';
+import { getSecret } from './awsSecretsManager';
+import { getParameter } from './awsSecrets';
 const execPromise = util.promisify(exec);
 // A cache to hold tenant-specific Prisma Client instances
 const prismaClients: { [key: string]: TenantPrismaClient } = {};
 
 
-// Fetch and set master DB URL from AWS Secrets Manager (recommended for RDS)
-export async function setMasterDbUrlFromSecretsManager(secretId: string, dbName: string) {
+
+/**
+ * Set master DB URL from AWS Secrets Manager (recommended for RDS)
+ * @param secretId AWS Secrets Manager secret name/ARN
+ * @param dbName Optional DB name override
+ */
+export async function setMasterDbUrlFromSecretsManager(secretId: string, dbName?: string) {
   const secret = await getSecret(secretId);
-  // secret should contain username, password, host, port
-  const url = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName}?schema=public`;
+  const url = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName || secret.dbname}?schema=public`;
   process.env.DATABASE_URL_MASTER = url;
+  return url;
 }
 
-// (Retain SSM method for backward compatibility)
+/**
+ * Set master DB URL from AWS SSM Parameter Store (expects full connection string as SecureString)
+ * @param paramName SSM parameter name
+ */
 export async function setMasterDbUrlFromSSM(paramName: string) {
   const url = await getParameter(paramName);
   process.env.DATABASE_URL_MASTER = url;
+  return url;
 }
 
-
-// Fetch and set tenant DB URL from AWS Secrets Manager
-export async function setTenantDbUrlFromSecretsManager(secretId: string, dbName: string) {
+/**
+ * Set tenant DB URL from AWS Secrets Manager
+ * @param secretId AWS Secrets Manager secret name/ARN
+ * @param dbName Optional DB name override
+ */
+export async function setTenantDbUrlFromSecretsManager(secretId: string, dbName?: string) {
   const secret = await getSecret(secretId);
-  // secret should contain username, password, host, port
-  const url = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName}?schema=public`;
+  const url = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName || secret.dbname}?schema=public`;
   process.env.DATABASE_URL_TENANT = url;
+  return url;
 }
 
-// (Retain SSM method for backward compatibility)
+/**
+ * Set tenant DB URL from AWS SSM Parameter Store (expects full connection string as SecureString)
+ * @param paramName SSM parameter name
+ */
 export async function setTenantDbUrlFromSSM(paramName: string) {
   const url = await getParameter(paramName);
   process.env.DATABASE_URL_TENANT = url;
+  return url;
 }
 
 
-// Deprecated: Use getTenantPrismaClientWithParams or setTenantDbUrlFromSSM
+// Deprecated: Use getTenantPrismaClientWithParams or setTenantDbUrlFromSecretsManager
 export function getTenantPrismaClient(dbName: string): never {
-  throw new Error('getTenantPrismaClient now requires DB connection params. Use getTenantPrismaClientWithParams or setTenantDbUrlFromSSM instead.');
+  throw new Error('getTenantPrismaClient now requires DB connection params. Use getTenantPrismaClientWithParams or setTenantDbUrlFromSecretsManager instead.');
 }
 
 /**
@@ -86,10 +103,11 @@ export async function createTenantDatabaseAndUser(dbName: string, tenantDbUser: 
  * Runs 'prisma migrate deploy' for a specific tenant's database.
  * Optionally fetches DB URL from SSM if paramName is provided.
  */
-export async function runMigrationsForTenant(dbName: string, dbUser: string, dbPass: string, dbHost: string, dbPort: string, paramName?: string) {
+export async function runMigrationsForTenant(dbName: string, dbUser: string, dbPass: string, dbHost: string, dbPort: string, secretId?: string) {
   let databaseUrl = `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
-  if (paramName) {
-    databaseUrl = await getParameter(paramName);
+  if (secretId) {
+    const secret = await getSecret(secretId);
+    databaseUrl = `postgresql://${secret.username}:${secret.password}@${secret.host}:${secret.port}/${dbName || secret.dbname}?schema=public`;
   }
   const command = `npx prisma migrate deploy --schema=./prisma/schema.prisma`;
   await execPromise(command, {
