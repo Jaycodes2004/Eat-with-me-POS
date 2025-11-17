@@ -18,4 +18,5 @@ model Tenant {
   createdAt    DateTime @default(now())
   restaurantId String   @unique
   useRedis     Boolean  @default(false)
+  plan         String?  
 }

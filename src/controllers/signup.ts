@@ -19,7 +19,7 @@ async function generateUniqueRestaurantId(): Promise<string> {
 
 export async function signup(req: Request, res: Response) {
   // masterPrisma should be initialized at app startup, not here
-  const { restaurantName, adminName, email, password, confirmPassword, useRedis, country } = req.body;
+  const { restaurantName, adminName, email, password, confirmPassword, useRedis, country, plan } = req.body;
 
   const normalizedUseRedis = typeof useRedis === 'string'
     ? useRedis.toLowerCase() === 'true'
@@ -105,6 +105,7 @@ export async function signup(req: Request, res: Response) {
         dbUser,
         dbPassword,
         useRedis: normalizedUseRedis,
+        plan, // Add this line
       },
     });
 
