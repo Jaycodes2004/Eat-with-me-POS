@@ -45,6 +45,6 @@ jobs:
             # --- Copy generated Prisma master client to dist directory ---
             mkdir -p dist/generated
             cp -r src/generated/master dist/generated/
-            pm2 start dist/server.js --name backend || pm2 restart backend
-            pm2 save
-          '
+            # Make script executable and run it
+            chmod +x scripts/load-env-and-start.sh
+            ./scripts/load-env-and-start.sh          '
