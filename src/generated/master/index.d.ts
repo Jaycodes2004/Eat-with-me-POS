@@ -25,6 +25,7 @@ export type TenantPayload<ExtArgs extends $Extensions.Args = $Extensions.Default
     createdAt: Date
     restaurantId: string
     useRedis: boolean
+    plan: string | null
   }, ExtArgs["result"]["tenant"]>
   composites: {}
 }
@@ -940,6 +941,7 @@ export namespace Prisma {
     createdAt: Date | null
     restaurantId: string | null
     useRedis: boolean | null
+    plan: string | null
   }
 
   export type TenantMaxAggregateOutputType = {
@@ -952,6 +954,7 @@ export namespace Prisma {
     createdAt: Date | null
     restaurantId: string | null
     useRedis: boolean | null
+    plan: string | null
   }
 
   export type TenantCountAggregateOutputType = {
@@ -964,6 +967,7 @@ export namespace Prisma {
     createdAt: number
     restaurantId: number
     useRedis: number
+    plan: number
     _all: number
   }
 
@@ -978,6 +982,7 @@ export namespace Prisma {
     createdAt?: true
     restaurantId?: true
     useRedis?: true
+    plan?: true
   }
 
   export type TenantMaxAggregateInputType = {
@@ -990,6 +995,7 @@ export namespace Prisma {
     createdAt?: true
     restaurantId?: true
     useRedis?: true
+    plan?: true
   }
 
   export type TenantCountAggregateInputType = {
@@ -1002,6 +1008,7 @@ export namespace Prisma {
     createdAt?: true
     restaurantId?: true
     useRedis?: true
+    plan?: true
     _all?: true
   }
 
@@ -1088,6 +1095,7 @@ export namespace Prisma {
     createdAt: Date
     restaurantId: string
     useRedis: boolean
+    plan: string | null
     _count: TenantCountAggregateOutputType | null
     _min: TenantMinAggregateOutputType | null
     _max: TenantMaxAggregateOutputType | null
@@ -1117,6 +1125,7 @@ export namespace Prisma {
     createdAt?: boolean
     restaurantId?: boolean
     useRedis?: boolean
+    plan?: boolean
   }, ExtArgs["result"]["tenant"]>
 
   export type TenantSelectScalar = {
@@ -1129,6 +1138,7 @@ export namespace Prisma {
     createdAt?: boolean
     restaurantId?: boolean
     useRedis?: boolean
+    plan?: boolean
   }
 
 
@@ -1856,7 +1866,8 @@ export namespace Prisma {
     dbPassword: 'dbPassword',
     createdAt: 'createdAt',
     restaurantId: 'restaurantId',
-    useRedis: 'useRedis'
+    useRedis: 'useRedis',
+    plan: 'plan'
   };
 
   export type TenantScalarFieldEnum = (typeof TenantScalarFieldEnum)[keyof typeof TenantScalarFieldEnum]
@@ -1878,6 +1889,14 @@ export namespace Prisma {
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
   /**
    * Deep Input Types
    */
@@ -1896,6 +1915,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter | Date | string
     restaurantId?: StringFilter | string
     useRedis?: BoolFilter | boolean
+    plan?: StringNullableFilter | string | null
   }
 
   export type TenantOrderByWithRelationInput = {
@@ -1908,6 +1928,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     restaurantId?: SortOrder
     useRedis?: SortOrder
+    plan?: SortOrderInput | SortOrder
   }
 
   export type TenantWhereUniqueInput = {
@@ -1927,6 +1948,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     restaurantId?: SortOrder
     useRedis?: SortOrder
+    plan?: SortOrderInput | SortOrder
     _count?: TenantCountOrderByAggregateInput
     _max?: TenantMaxOrderByAggregateInput
     _min?: TenantMinOrderByAggregateInput
@@ -1945,6 +1967,7 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter | Date | string
     restaurantId?: StringWithAggregatesFilter | string
     useRedis?: BoolWithAggregatesFilter | boolean
+    plan?: StringNullableWithAggregatesFilter | string | null
   }
 
   export type TenantCreateInput = {
@@ -1957,6 +1980,7 @@ export namespace Prisma {
     createdAt?: Date | string
     restaurantId: string
     useRedis?: boolean
+    plan?: string | null
   }
 
   export type TenantUncheckedCreateInput = {
@@ -1969,6 +1993,7 @@ export namespace Prisma {
     createdAt?: Date | string
     restaurantId: string
     useRedis?: boolean
+    plan?: string | null
   }
 
   export type TenantUpdateInput = {
@@ -1981,6 +2006,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     restaurantId?: StringFieldUpdateOperationsInput | string
     useRedis?: BoolFieldUpdateOperationsInput | boolean
+    plan?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TenantUncheckedUpdateInput = {
@@ -1993,6 +2019,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     restaurantId?: StringFieldUpdateOperationsInput | string
     useRedis?: BoolFieldUpdateOperationsInput | boolean
+    plan?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TenantCreateManyInput = {
@@ -2005,6 +2032,7 @@ export namespace Prisma {
     createdAt?: Date | string
     restaurantId: string
     useRedis?: boolean
+    plan?: string | null
   }
 
   export type TenantUpdateManyMutationInput = {
@@ -2017,6 +2045,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     restaurantId?: StringFieldUpdateOperationsInput | string
     useRedis?: BoolFieldUpdateOperationsInput | boolean
+    plan?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type TenantUncheckedUpdateManyInput = {
@@ -2029,6 +2058,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     restaurantId?: StringFieldUpdateOperationsInput | string
     useRedis?: BoolFieldUpdateOperationsInput | boolean
+    plan?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type StringFilter = {
@@ -2062,6 +2092,26 @@ export namespace Prisma {
     not?: NestedBoolFilter | boolean
   }
 
+  export type StringNullableFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | string | null
+    notIn?: Enumerable<string> | string | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringNullableFilter | string | null
+  }
+
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
+
   export type TenantCountOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
@@ -2072,6 +2122,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     restaurantId?: SortOrder
     useRedis?: SortOrder
+    plan?: SortOrder
   }
 
   export type TenantMaxOrderByAggregateInput = {
@@ -2084,6 +2135,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     restaurantId?: SortOrder
     useRedis?: SortOrder
+    plan?: SortOrder
   }
 
   export type TenantMinOrderByAggregateInput = {
@@ -2096,6 +2148,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     restaurantId?: SortOrder
     useRedis?: SortOrder
+    plan?: SortOrder
   }
 
   export type StringWithAggregatesFilter = {
@@ -2138,6 +2191,24 @@ export namespace Prisma {
     _max?: NestedBoolFilter
   }
 
+  export type StringNullableWithAggregatesFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | string | null
+    notIn?: Enumerable<string> | string | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedStringNullableFilter
+    _max?: NestedStringNullableFilter
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
@@ -2148,6 +2219,10 @@ export namespace Prisma {
 
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
   }
 
   export type NestedStringFilter = {
@@ -2178,6 +2253,20 @@ export namespace Prisma {
   export type NestedBoolFilter = {
     equals?: boolean
     not?: NestedBoolFilter | boolean
+  }
+
+  export type NestedStringNullableFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | string | null
+    notIn?: Enumerable<string> | string | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    not?: NestedStringNullableFilter | string | null
   }
 
   export type NestedStringWithAggregatesFilter = {
@@ -2228,6 +2317,34 @@ export namespace Prisma {
     _count?: NestedIntFilter
     _min?: NestedBoolFilter
     _max?: NestedBoolFilter
+  }
+
+  export type NestedStringNullableWithAggregatesFilter = {
+    equals?: string | null
+    in?: Enumerable<string> | string | null
+    notIn?: Enumerable<string> | string | null
+    lt?: string
+    lte?: string
+    gt?: string
+    gte?: string
+    contains?: string
+    startsWith?: string
+    endsWith?: string
+    not?: NestedStringNullableWithAggregatesFilter | string | null
+    _count?: NestedIntNullableFilter
+    _min?: NestedStringNullableFilter
+    _max?: NestedStringNullableFilter
+  }
+
+  export type NestedIntNullableFilter = {
+    equals?: number | null
+    in?: Enumerable<number> | number | null
+    notIn?: Enumerable<number> | number | null
+    lt?: number
+    lte?: number
+    gt?: number
+    gte?: number
+    not?: NestedIntNullableFilter | number | null
   }
 
 

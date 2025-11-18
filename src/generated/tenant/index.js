@@ -518,7 +518,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\swapn\\Desktop\\Freelancing\\Postakel\\Eat With Me POS Production\\Eat-with-me-POS\\prisma\\src\\generated\\tenant",
+      "value": "C:\\Users\\swapn\\Desktop\\Freelancing\\Postakel\\Eat With Me POS Production\\Eat-with-me-POS\\src\\generated\\tenant",
       "fromEnvVar": null
     },
     "config": {
@@ -535,10 +535,9 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../../../.env",
-    "schemaEnvPath": "../../../../.env"
+    "rootEnvPath": null
   },
-  "relativePath": "../../../tenant",
+  "relativePath": "../../../prisma/tenant",
   "clientVersion": "4.16.2",
   "engineVersion": "4bc8b6e1b66cb932731fb1bdbbc550d1e010de81",
   "datasourceNames": [
@@ -553,7 +552,7 @@ const fs = require('fs')
 
 config.dirname = __dirname
 if (!fs.existsSync(path.join(__dirname, 'schema.prisma'))) {
-  config.dirname = path.join(process.cwd(), "prisma/src/generated/tenant")
+  config.dirname = path.join(process.cwd(), "src/generated/tenant")
   config.isBundled = true
 }
 
@@ -577,6 +576,6 @@ exports.PrismaClient = PrismaClient
 Object.assign(exports, Prisma)
 
 path.join(__dirname, "query_engine-windows.dll.node");
-path.join(process.cwd(), "prisma/src/generated/tenant/query_engine-windows.dll.node")
+path.join(process.cwd(), "src/generated/tenant/query_engine-windows.dll.node")
 path.join(__dirname, "schema.prisma");
-path.join(process.cwd(), "prisma/src/generated/tenant/schema.prisma")
+path.join(process.cwd(), "src/generated/tenant/schema.prisma")

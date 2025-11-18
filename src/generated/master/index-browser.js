@@ -114,7 +114,8 @@ exports.Prisma.TenantScalarFieldEnum = {
   dbPassword: 'dbPassword',
   createdAt: 'createdAt',
   restaurantId: 'restaurantId',
-  useRedis: 'useRedis'
+  useRedis: 'useRedis',
+  plan: 'plan'
 };
 
 exports.Prisma.SortOrder = {
@@ -125,6 +126,11 @@ exports.Prisma.SortOrder = {
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 
