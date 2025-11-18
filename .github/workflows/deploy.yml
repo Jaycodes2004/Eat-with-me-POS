@@ -53,6 +53,7 @@ jobs:
             echo "📁 Copying Prisma master client to dist"
             mkdir -p dist/generated
             cp -r src/generated/master dist/generated/
+            cp -r src/generated/tenant dist/generated/
 
             echo "🚀 Starting server"
             chmod +x scripts/load-env-and-start.sh
