@@ -1,0 +1,541 @@
+
+Object.defineProperty(exports, "__esModule", { value: true });
+
+const {
+  Decimal,
+  objectEnumValues,
+  makeStrictEnum,
+  Public,
+} = require('./runtime/index-browser')
+
+
+const Prisma = {}
+
+exports.Prisma = Prisma
+
+/**
+ * Prisma Client JS version: 4.16.2
+ * Query Engine version: 4bc8b6e1b66cb932731fb1bdbbc550d1e010de81
+ */
+Prisma.prismaVersion = {
+  client: "4.16.2",
+  engine: "4bc8b6e1b66cb932731fb1bdbbc550d1e010de81"
+}
+
+Prisma.PrismaClientKnownRequestError = () => {
+  throw new Error(`PrismaClientKnownRequestError is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)};
+Prisma.PrismaClientUnknownRequestError = () => {
+  throw new Error(`PrismaClientUnknownRequestError is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.PrismaClientRustPanicError = () => {
+  throw new Error(`PrismaClientRustPanicError is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.PrismaClientInitializationError = () => {
+  throw new Error(`PrismaClientInitializationError is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.PrismaClientValidationError = () => {
+  throw new Error(`PrismaClientValidationError is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.NotFoundError = () => {
+  throw new Error(`NotFoundError is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.Decimal = Decimal
+
+/**
+ * Re-export of sql-template-tag
+ */
+Prisma.sql = () => {
+  throw new Error(`sqltag is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.empty = () => {
+  throw new Error(`empty is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.join = () => {
+  throw new Error(`join is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.raw = () => {
+  throw new Error(`raw is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.validator = Public.validator
+
+/**
+* Extensions
+*/
+Prisma.getExtensionContext = () => {
+  throw new Error(`Extensions.getExtensionContext is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+Prisma.defineExtension = () => {
+  throw new Error(`Extensions.defineExtension is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+)}
+
+/**
+ * Shorthand utilities for JSON filtering
+ */
+Prisma.DbNull = objectEnumValues.instances.DbNull
+Prisma.JsonNull = objectEnumValues.instances.JsonNull
+Prisma.AnyNull = objectEnumValues.instances.AnyNull
+
+Prisma.NullTypes = {
+  DbNull: objectEnumValues.classes.DbNull,
+  JsonNull: objectEnumValues.classes.JsonNull,
+  AnyNull: objectEnumValues.classes.AnyNull
+}
+
+/**
+ * Enums
+ */
+
+exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
+  ReadUncommitted: 'ReadUncommitted',
+  ReadCommitted: 'ReadCommitted',
+  RepeatableRead: 'RepeatableRead',
+  Serializable: 'Serializable'
+});
+
+exports.Prisma.CustomerScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  phone: 'phone',
+  email: 'email',
+  notes: 'notes',
+  joinDate: 'joinDate',
+  loyaltyPoints: 'loyaltyPoints',
+  totalSpent: 'totalSpent',
+  totalOrders: 'totalOrders',
+  visitCount: 'visitCount',
+  lastVisit: 'lastVisit',
+  loyaltyTier: 'loyaltyTier',
+  status: 'status',
+  whatsappOptIn: 'whatsappOptIn',
+  birthDate: 'birthDate',
+  anniversary: 'anniversary',
+  preferences: 'preferences',
+  referralCode: 'referralCode',
+  referredBy: 'referredBy',
+  referralCount: 'referralCount',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.StaffScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  password: 'password',
+  phone: 'phone',
+  pin: 'pin',
+  isActive: 'isActive',
+  salary: 'salary',
+  permissions: 'permissions',
+  dashboardModules: 'dashboardModules',
+  joinDate: 'joinDate',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  roleId: 'roleId'
+};
+
+exports.Prisma.RestaurantScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  address: 'address',
+  phone: 'phone',
+  email: 'email',
+  taxNumber: 'taxNumber',
+  fssaiNumber: 'fssaiNumber',
+  currencySymbol: 'currencySymbol',
+  currency: 'currency',
+  country: 'country',
+  language: 'language',
+  plan: 'plan',
+  theme: 'theme',
+  notifications: 'notifications',
+  autoBackup: 'autoBackup',
+  whatsappApiKey: 'whatsappApiKey',
+  whatsappPhoneNumber: 'whatsappPhoneNumber',
+  enableMarketing: 'enableMarketing',
+  taxRules: 'taxRules',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.MenuItemScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  price: 'price',
+  description: 'description',
+  available: 'available',
+  isVeg: 'isVeg',
+  spiceLevel: 'spiceLevel',
+  cookingTime: 'cookingTime',
+  isPopular: 'isPopular',
+  allergens: 'allergens',
+  calories: 'calories',
+  protein: 'protein',
+  carbs: 'carbs',
+  fat: 'fat',
+  categoryId: 'categoryId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LoyaltyRewardScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  description: 'description',
+  pointsRequired: 'pointsRequired',
+  type: 'type',
+  value: 'value',
+  validUntil: 'validUntil',
+  maxRedemptions: 'maxRedemptions',
+  currentRedemptions: 'currentRedemptions',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LoyaltyRuleScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  type: 'type',
+  condition: 'condition',
+  pointsPerRupee: 'pointsPerRupee',
+  bonusPoints: 'bonusPoints',
+  minOrderValue: 'minOrderValue',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.OrderScalarFieldEnum = {
+  id: 'id',
+  orderNumber: 'orderNumber',
+  orderSource: 'orderSource',
+  status: 'status',
+  priority: 'priority',
+  deliveryType: 'deliveryType',
+  subtotal: 'subtotal',
+  taxAmount: 'taxAmount',
+  discount: 'discount',
+  totalAmount: 'totalAmount',
+  paymentMethod: 'paymentMethod',
+  paymentStatus: 'paymentStatus',
+  paymentBreakdown: 'paymentBreakdown',
+  taxes: 'taxes',
+  tipAmount: 'tipAmount',
+  guests: 'guests',
+  specialInstructions: 'specialInstructions',
+  deliveryAddress: 'deliveryAddress',
+  metadata: 'metadata',
+  orderTime: 'orderTime',
+  estimatedTime: 'estimatedTime',
+  actualCookingTime: 'actualCookingTime',
+  completedAt: 'completedAt',
+  rating: 'rating',
+  feedback: 'feedback',
+  tableId: 'tableId',
+  customerId: 'customerId',
+  waiterId: 'waiterId',
+  createdById: 'createdById'
+};
+
+exports.Prisma.OrderItemScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  menuItemId: 'menuItemId',
+  name: 'name',
+  category: 'category',
+  quantity: 'quantity',
+  price: 'price',
+  notes: 'notes',
+  modifiers: 'modifiers',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.TableScalarFieldEnum = {
+  id: 'id',
+  number: 'number',
+  name: 'name',
+  area: 'area',
+  status: 'status',
+  capacity: 'capacity',
+  guests: 'guests',
+  currentOrderId: 'currentOrderId',
+  currentBillId: 'currentBillId',
+  lastOrderAt: 'lastOrderAt',
+  notes: 'notes'
+};
+
+exports.Prisma.ReservationScalarFieldEnum = {
+  id: 'id',
+  tableId: 'tableId',
+  customerId: 'customerId',
+  date: 'date',
+  time: 'time',
+  partySize: 'partySize',
+  status: 'status',
+  customerName: 'customerName',
+  customerPhone: 'customerPhone',
+  customerEmail: 'customerEmail',
+  specialRequests: 'specialRequests',
+  occasion: 'occasion',
+  source: 'source',
+  priority: 'priority'
+};
+
+exports.Prisma.InventoryItemScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  category: 'category',
+  unit: 'unit',
+  currentStock: 'currentStock',
+  minStock: 'minStock',
+  maxStock: 'maxStock',
+  costPerUnit: 'costPerUnit',
+  supplierId: 'supplierId',
+  expiryDate: 'expiryDate',
+  lastPurchase: 'lastPurchase',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.SupplierScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  category: 'category',
+  contactPerson: 'contactPerson',
+  phone: 'phone',
+  email: 'email',
+  address: 'address',
+  gstNumber: 'gstNumber',
+  creditDays: 'creditDays',
+  rating: 'rating',
+  status: 'status',
+  totalOrders: 'totalOrders',
+  totalAmount: 'totalAmount',
+  lastOrderDate: 'lastOrderDate',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PurchaseScalarFieldEnum = {
+  id: 'id',
+  supplierId: 'supplierId',
+  invoiceNumber: 'invoiceNumber',
+  date: 'date',
+  totalAmount: 'totalAmount',
+  notes: 'notes',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PurchaseItemScalarFieldEnum = {
+  id: 'id',
+  purchaseId: 'purchaseId',
+  inventoryItemId: 'inventoryItemId',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
+  totalPrice: 'totalPrice'
+};
+
+exports.Prisma.RecipeScalarFieldEnum = {
+  id: 'id',
+  menuItemId: 'menuItemId',
+  ingredients: 'ingredients',
+  yield: 'yield',
+  cost: 'cost',
+  preparationTime: 'preparationTime',
+  instructions: 'instructions',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ExpenseScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  category: 'category',
+  subcategory: 'subcategory',
+  amount: 'amount',
+  netAmount: 'netAmount',
+  taxAmount: 'taxAmount',
+  date: 'date',
+  vendor: 'vendor',
+  description: 'description',
+  paymentMethod: 'paymentMethod',
+  status: 'status',
+  receiptUrl: 'receiptUrl',
+  receiptNumber: 'receiptNumber',
+  recurring: 'recurring',
+  recurringPeriod: 'recurringPeriod',
+  approvedBy: 'approvedBy',
+  supplierId: 'supplierId',
+  tags: 'tags',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.BudgetCategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  budget: 'budget',
+  spent: 'spent',
+  icon: 'icon',
+  color: 'color',
+  description: 'description',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CategoryScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  color: 'color',
+  type: 'type',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.RoleScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  permissions: 'permissions',
+  dashboardModules: 'dashboardModules',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WastageScalarFieldEnum = {
+  id: 'id',
+  date: 'date',
+  notes: 'notes',
+  createdBy: 'createdBy'
+};
+
+exports.Prisma.WastageItemScalarFieldEnum = {
+  id: 'id',
+  wastageId: 'wastageId',
+  inventoryItemId: 'inventoryItemId',
+  quantity: 'quantity',
+  reason: 'reason'
+};
+
+exports.Prisma.ShiftLogScalarFieldEnum = {
+  id: 'id',
+  staffId: 'staffId',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  openingCash: 'openingCash',
+  closingCash: 'closingCash',
+  totalSales: 'totalSales',
+  tips: 'tips',
+  date: 'date',
+  status: 'status',
+  shiftType: 'shiftType'
+};
+
+exports.Prisma.SalaryPaymentScalarFieldEnum = {
+  id: 'id',
+  staffId: 'staffId',
+  amount: 'amount',
+  paymentDate: 'paymentDate',
+  paymentType: 'paymentType',
+  description: 'description',
+  paidBy: 'paidBy',
+  status: 'status',
+  month: 'month',
+  year: 'year'
+};
+
+exports.Prisma.LoyaltyLogScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  points: 'points',
+  action: 'action',
+  date: 'date'
+};
+
+exports.Prisma.SortOrder = {
+  asc: 'asc',
+  desc: 'desc'
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
+exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
+};
+
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+
+
+exports.Prisma.ModelName = {
+  Customer: 'Customer',
+  Staff: 'Staff',
+  Restaurant: 'Restaurant',
+  MenuItem: 'MenuItem',
+  LoyaltyReward: 'LoyaltyReward',
+  LoyaltyRule: 'LoyaltyRule',
+  Order: 'Order',
+  OrderItem: 'OrderItem',
+  Table: 'Table',
+  Reservation: 'Reservation',
+  InventoryItem: 'InventoryItem',
+  Supplier: 'Supplier',
+  Purchase: 'Purchase',
+  PurchaseItem: 'PurchaseItem',
+  Recipe: 'Recipe',
+  Expense: 'Expense',
+  BudgetCategory: 'BudgetCategory',
+  Category: 'Category',
+  Role: 'Role',
+  Wastage: 'Wastage',
+  WastageItem: 'WastageItem',
+  ShiftLog: 'ShiftLog',
+  SalaryPayment: 'SalaryPayment',
+  LoyaltyLog: 'LoyaltyLog'
+};
+
+/**
+ * Create the Client
+ */
+class PrismaClient {
+  constructor() {
+    throw new Error(
+      `PrismaClient is unable to be run in the browser.
+In case this error is unexpected for you, please report it in https://github.com/prisma/prisma/issues`,
+    )
+  }
+}
+exports.PrismaClient = PrismaClient
+
+Object.assign(exports, Prisma)
