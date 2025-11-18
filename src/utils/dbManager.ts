@@ -1,6 +1,7 @@
 import { exec } from "child_process";
 import util from "util";
-import { PrismaClient as TenantPrismaClient } from "@prisma/client";
+import { PrismaClient as TenantPrismaClient } from '../generated/tenant';
+
 import { getParameter } from "./awsSecrets";
 import { getSecret } from "./awsSecretsManager";
 
