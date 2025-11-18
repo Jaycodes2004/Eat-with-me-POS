@@ -222,24 +222,50 @@ export async function createTenantDatabaseAndUser(
 /**
  * Apply tenant migrations (schema.prisma)
  */
+// export async function runMigrationsForTenant(
+//   dbName: string,
+//   dbUser: string,
+//   dbPass: string,
+//   dbHost: string,
+//   dbPort: string
+// ) {
+//   const cleanPort = dbPort.replace(/"/g, "");
+//   const databaseUrl = `postgresql://${dbUser}:${dbPass}@${dbHost}:${cleanPort}/${dbName}?schema=public`;
+
+//   await execPromise(`npx prisma migrate deploy --schema=./prisma/tenant/schema.prisma`, {
+//     env: {
+//       ...process.env,
+//       DATABASE_URL: databaseUrl,
+//       DATABASE_URL_TENANT: databaseUrl,
+//     },
+//   });
+// }
+
+
 export async function runMigrationsForTenant(
   dbName: string,
   dbUser: string,
   dbPass: string,
   dbHost: string,
-  dbPort: string
+  dbPort: string,
+  secretId?: string
 ) {
-  const cleanPort = dbPort.replace(/"/g, "");
-  const databaseUrl = `postgresql://${dbUser}:${dbPass}@${dbHost}:${cleanPort}/${dbName}?schema=public`;
+  let url = `postgresql://${dbUser}:${dbPass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
 
-  await execPromise(`npx prisma migrate deploy --schema=./prisma/tenant/schema.prisma`, {
+  console.log("⚠️  MIGRATION URL DEBUG:", url);
+  console.log("⚠️  RAW PARAMS:", { dbUser, dbPass, dbHost, dbPort });
+
+  const command = `npx prisma migrate deploy --schema=./prisma/tenant/schema.prisma`;
+
+  await execPromise(command, {
     env: {
       ...process.env,
-      DATABASE_URL: databaseUrl,
-      DATABASE_URL_TENANT: databaseUrl,
-    },
+      DATABASE_URL: url,
+      DATABASE_URL_TENANT: url,
+    }
   });
 }
+
 
 /**
  * Drop tenant DB + user
