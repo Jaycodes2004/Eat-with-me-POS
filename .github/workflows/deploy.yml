@@ -25,8 +25,6 @@ jobs:
             set -e
             cd /home/ubuntu/Eat-with-me-POS
 
-            echo "🔓 Temporarily unlocking .env for write"
-            chmod 600 .env || true
 
             echo "⚠️ Backing up .env"
             cp -f .env /tmp/env-backup || true
@@ -60,6 +58,5 @@ jobs:
             chmod +x scripts/load-env-and-start.sh
             ./scripts/load-env-and-start.sh
 
-            echo "🔒 Locking .env (read-only)"
-            chmod 400 .env
+          
           '
