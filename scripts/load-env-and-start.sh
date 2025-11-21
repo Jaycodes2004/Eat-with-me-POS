@@ -1,7 +1,17 @@
 #!/bin/bash
 set -e
 
-echo "Loading environment variables from AWS Parameter Store..."
+echo "🔹 Loading environment variables from .env first..."
+
+# Load .env into environment
+if [ -f ".env" ]; then
+  export $(grep -v '^#' .env | xargs)
+  echo "✔ .env loaded"
+else
+  echo "❌ .env file not found!"
+fi
+
+echo "🔹 Loading AWS SSM parameters..."
 
 # Fetch DATABASE_URL_MASTER
 export DATABASE_URL_MASTER=$(aws ssm get-parameter \
@@ -22,21 +32,23 @@ DB_PASS=$(aws ssm get-parameter --name "/eatwithme/db-password" --with-decryptio
 DB_HOST=$(aws ssm get-parameter --name "/eatwithme/db-host" --with-decryption --region ap-south-1 --query "Parameter.Value" --output text)
 DB_PORT=$(aws ssm get-parameter --name "/eatwithme/db-port" --with-decryption --region ap-south-1 --query "Parameter.Value" --output text)
 
-# Remove quotes ("5432" → 5432)
+# Remove quotes
 DB_USER=$(echo "$DB_USER" | tr -d '"')
 DB_PASS=$(echo "$DB_PASS" | tr -d '"')
 DB_HOST=$(echo "$DB_HOST" | tr -d '"')
 DB_PORT=$(echo "$DB_PORT" | tr -d '"')
 
-# Export
 export DB_USER DB_PASS DB_HOST DB_PORT
 
-echo "Environment variables loaded:"
+echo "🔹 ENV Summary:"
+echo "DATABASE_URL_MASTER=$DATABASE_URL_MASTER"
 echo "DB_HOST=$DB_HOST"
 echo "DB_PORT=$DB_PORT"
+echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS"
 
-# Start backend
-pm2 start dist/server.js --name backend --update-env || pm2 restart backend --update-env
+echo "🚀 Starting backend with PM2..."
+pm2 delete backend || true
+pm2 start dist/server.js --name backend --update-env
 pm2 save
 
-echo "Deployment completed successfully!"
+echo "🎉 Deployment completed successfully!"
