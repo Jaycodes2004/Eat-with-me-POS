@@ -111,22 +111,38 @@ import { budgetRoutes } from "./routes/budget";
 export async function createApp(): Promise<express.Express> {
   const app = express();
 
-  // ------------------------  
-  //  CORS - Read from .env  
-  // ------------------------
+  // ---------------------------------------
+  //  CORS FIX — Required for Vercel + Ngrok
+  // ---------------------------------------
   const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(",").map(origin => origin.trim())
-    : ["http://localhost:3000"]; // fallback for local dev
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://eat-with-me-pos-frontend.vercel.app",
+      ];
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow mobile apps / curl / server-to-server
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
           return callback(null, true);
         }
+
+        console.warn("❌ CORS blocked:", origin);
         return callback(new Error("Blocked by CORS: " + origin));
       },
       credentials: true,
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: [
+        "Content-Type",
+        "Authorization",
+        "X-Restaurant-Id",
+        "X-Tenant-Id",
+      ],
     })
   );
 
@@ -135,6 +151,7 @@ export async function createApp(): Promise<express.Express> {
 
   // ------------------------
   // Public Routes (No Auth)
+  // Used for signup + login
   // ------------------------
   app.use("/api", authRoutes);
 
