@@ -6,16 +6,16 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
+      
       - name: Copy SSH key
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
           chmod 600 key.pem
-
+      
       - name: Deploy to EC2
         env:
           HOST: ${{ secrets.EC2_HOST }}
@@ -23,45 +23,46 @@ jobs:
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no $USERNAME@$HOST '
             set -e
-            cd /home/ubuntu/Eat-with-me-POS
-
+            
+            cd /home/ubuntu/www/eatwithme
+            
             echo "🔐 Fixing permissions"
-            sudo chown -R ubuntu:ubuntu /home/ubuntu/Eat-with-me-POS
-            sudo chmod -R u+rwX /home/ubuntu/Eat-with-me-POS
-
+            sudo chown -R ubuntu:ubuntu /home/ubuntu/www/eatwithme
+            sudo chmod -R u+rwX /home/ubuntu/www/eatwithme
+            
             echo "⚠️ Backing up .env"
             cp -f .env /tmp/env-backup || true
-
+            
             echo "🧹 Cleaning repo safely"
             git fetch --all
             git reset --hard origin/main
-            git clean -fdx -e .env   # preserve .env only
-
+            git clean -fdx -e .env # preserve .env only
+            
             echo "♻️ Restoring .env"
             cp -f /tmp/env-backup .env || true
-
+            
             echo "📦 Cleaning node_modules and cache"
             rm -rf node_modules dist .prisma
             npm cache clean --force
-
+            
             echo "📦 Installing dependencies"
             npm install --legacy-peer-deps
-
+            
             echo "🔧 Generating Prisma Clients"
             npx prisma generate --schema=prisma/master/master.prisma
             npx prisma generate --schema=prisma/tenant/schema.prisma
-
-            echo "🏗️ Building TypeScript"
+            
+            echo "🏭 Building TypeScript"
             npx tsc
-
+            
             echo "📁 Copy Prisma clients to dist"
             mkdir -p dist/generated
             cp -r src/generated/master dist/generated/ || true
             cp -r src/generated/tenant dist/generated/ || true
-
+            
             echo "🚀 Starting backend"
             chmod +x scripts/load-env-and-start.sh
             ./scripts/load-env-and-start.sh
-
+            
             echo "🎉 Deployment completed!"
           '
