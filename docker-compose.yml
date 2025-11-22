@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  eatwithme-backend:
+    build: .
+    container_name: eatwithme-backend
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "4002:4002"
