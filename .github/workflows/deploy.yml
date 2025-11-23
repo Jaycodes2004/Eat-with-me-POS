@@ -23,6 +23,7 @@ jobs:
         run: |
           ssh -i key.pem -o StrictHostKeyChecking=no $USERNAME@$HOST '
             set -e
+                      source ~/.bash_profile
             
             cd /home/ubuntu/www/eatwithme
             
