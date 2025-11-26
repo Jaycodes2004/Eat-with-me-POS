@@ -8,3 +8,9 @@ services:
       - .env
     ports:
       - "4002:4002"
+    networks:
+      - backend-network
+
+networks:
+  backend-network:
+    external: true
