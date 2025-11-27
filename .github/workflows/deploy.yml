@@ -50,9 +50,7 @@ jobs:
             npm install --legacy-peer-deps
             
             echo "🔧 Generating Prisma Clients"
-            npx prisma generate --schema=prisma/master/master.prisma
             npx prisma generate --schema=prisma/tenant/schema.prisma
-            
             echo "🏭 Building TypeScript"
             npx tsc
             
