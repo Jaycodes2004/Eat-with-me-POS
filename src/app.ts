@@ -120,6 +120,10 @@ export async function createApp(): Promise<express.Express> {
         "http://localhost:3000",
         "http://localhost:5173",
         "https://eat-with-me-pos-frontend.vercel.app",
+          "https://carma-devout-transcendentally.ngrok-free.dev",
+          "https://*.ngrok-free.dev",
+          "https://eatwithme.easytomanage.xyz",
+          "https://admin.easytomanage.xyz",
       ];
 
   app.use(
