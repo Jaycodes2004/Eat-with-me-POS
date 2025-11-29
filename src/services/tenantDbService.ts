@@ -1,14 +1,27 @@
+
 import { Client } from "pg";
 
-const MASTER_DB_URL = process.env.DATABASE_URL_MASTER!;
-if (!MASTER_DB_URL) {
-  throw new Error("DATABASE_URL_MASTER is not defined");
+// Old DATABASE_URL_MASTER logic (commented out)
+// const MASTER_DB_URL = process.env.DATABASE_URL_MASTER!;
+// if (!MASTER_DB_URL) {
+//   throw new Error("DATABASE_URL_MASTER is not defined");
+// }
+
+// New: Use individual env vars for master DB connection
+const MASTER_DB_USER = process.env.MASTER_DB_USER;
+const MASTER_DB_PASS = process.env.MASTER_DB_PASS;
+const MASTER_DB_HOST = process.env.MASTER_DB_HOST;
+const MASTER_DB_PORT = process.env.MASTER_DB_PORT || "5432";
+const MASTER_DB_NAME = process.env.MASTER_DB_NAME || "master-db";
+
+if (!MASTER_DB_USER || !MASTER_DB_PASS || !MASTER_DB_HOST) {
+  throw new Error("Master DB env vars (MASTER_DB_USER/PASS/HOST) are not defined");
 }
 
-
 function createMasterClient() {
+  const url = `postgresql://${encodeURIComponent(MASTER_DB_USER as string)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${MASTER_DB_HOST as string}:${MASTER_DB_PORT}/${MASTER_DB_NAME}?sslmode=require`;
   return new Client({
-    connectionString: MASTER_DB_URL,
+    connectionString: url,
     ssl: {
       rejectUnauthorized: false,
     },
