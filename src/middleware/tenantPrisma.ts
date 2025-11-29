@@ -62,9 +62,11 @@ export async function tenantPrisma(req: Request, res: Response, next: NextFuncti
   }
 
   try {
-    const tenant = await masterPrisma.tenant.findUnique({
-      where: { restaurantId }
-    });
+    // Use admin backend API to fetch tenant info
+    // const tenant = await masterPrisma.tenant.findUnique({
+    //   where: { restaurantId }
+    // });
+    // Master Prisma removed. Use admin backend API instead.
 
     if (!tenant) return res.status(404).json({ message: "Tenant not found" });
 

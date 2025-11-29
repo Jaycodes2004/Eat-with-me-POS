@@ -56,7 +56,6 @@ jobs:
             
             echo "📁 Copy Prisma clients to dist"
             mkdir -p dist/generated
-            cp -r src/generated/master dist/generated/ || true
             cp -r src/generated/tenant dist/generated/ || true
             
             echo "🚀 Starting backend"

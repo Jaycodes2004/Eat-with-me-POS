@@ -1,3 +1,1 @@
-import { PrismaClient as MasterPrismaClient } from '../generated/master';
-
-export const masterPrisma = new MasterPrismaClient();
+// Master Prisma removed. Use admin backend API instead.

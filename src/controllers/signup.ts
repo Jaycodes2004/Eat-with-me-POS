@@ -1,7 +1,6 @@
+import axios from 'axios';
 import { Request, Response } from 'express';
 // --- FIX: Use a direct relative path to the generated master client ---
-import { PrismaClient as MasterPrismaClient } from '../generated/master';
-const masterPrisma = new MasterPrismaClient();
 import { createTenantDatabaseAndUser, getTenantPrismaClientWithParams, runMigrationsForTenant, dropTenantDatabaseAndUser } from '../utils/dbManager';
 import { preloadSecrets } from '../utils/awsSecrets';
 import bcrypt from 'bcryptjs';
@@ -12,8 +11,16 @@ async function generateUniqueRestaurantId(): Promise<string> {
   let restaurantId = '';
   while (!isUnique) {
     restaurantId = Math.floor(1000000 + Math.random() * 9000000).toString();
-    const existingTenant = await masterPrisma.tenant.findUnique({ where: { restaurantId } });
-    if (!existingTenant) { isUnique = true; }
+    // Use admin backend API to check tenant by restaurantId
+    try {
+      const res = await axios.get(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
+      if (!res.data) {
+        isUnique = true;
+      }
+    } catch (err) {
+      // If 404, it's unique
+      isUnique = true;
+    }
   }
   return restaurantId;
 }
@@ -58,9 +65,19 @@ export async function signup(req: Request, res: Response) {
 
   try {
     console.info('[Signup] Checking for existing tenant', { email });
-    const existingTenant = await masterPrisma.tenant.findUnique({ where: { email } });
-    if (existingTenant) {
-      console.warn('[Signup] Tenant already exists', { email, restaurantId: existingTenant.restaurantId });
+    // Use admin backend API to check tenant by email
+    let tenantExists = false;
+    try {
+      const resTenant = await axios.get(`https://admin.easytomanage.xyz/api/tenants?email=${encodeURIComponent(email)}`);
+      if (resTenant.data) {
+        tenantExists = true;
+      }
+    } catch (err) {
+      // If 404, tenant does not exist
+      tenantExists = false;
+    }
+    if (tenantExists) {
+      console.warn('[Signup] Tenant already exists', { email });
       return res.status(409).json({ message: 'A restaurant with this email already exists.' });
     }
 
@@ -97,8 +114,10 @@ export async function signup(req: Request, res: Response) {
 
     // 3. Create tenant record in Master DB
     console.info('[Signup] Creating tenant record in master DB', { restaurantId });
-    const newTenant = await masterPrisma.tenant.create({
-      data: {
+    // Use admin backend API to create tenant
+    let newTenantId = restaurantId;
+    try {
+      const resNewTenant = await axios.post('https://admin.easytomanage.xyz/api/tenants', {
         name: restaurantName,
         email,
         restaurantId,
@@ -106,9 +125,15 @@ export async function signup(req: Request, res: Response) {
         dbUser,
         dbPassword,
         useRedis: normalizedUseRedis,
-        plan, // Add this line
-      },
-    });
+        plan,
+      });
+      if (resNewTenant.data && resNewTenant.data.restaurantId) {
+        newTenantId = resNewTenant.data.restaurantId;
+      }
+    } catch (err) {
+      // If error, fail
+      return res.status(500).json({ message: 'Failed to create tenant in master DB.' });
+    }
 
     // 4. Apply migrations to the new tenant DB
     console.info('[Signup] Running migrations for tenant', { restaurantId });
@@ -202,7 +227,7 @@ export async function signup(req: Request, res: Response) {
     console.info('[Signup] Signup successful', { restaurantId, email });
     res.status(201).json({
       message: 'Restaurant created successfully!',
-      restaurantId: newTenant.restaurantId,
+      restaurantId: newTenantId,
     });
 
   } catch (error: any) {
@@ -220,7 +245,12 @@ export async function signup(req: Request, res: Response) {
           masterDbPort || ''
         );
         // Also remove the record from the master DB if it was created
-        await masterPrisma.tenant.delete({ where: { restaurantId } }).catch(() => {});
+        // Use admin backend API to delete tenant by restaurantId
+        try {
+          await axios.delete(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
+        } catch (err) {
+          // Ignore cleanup errors
+        }
         console.log(`Cleanup successful for restaurantId: ${restaurantId}`);
       } catch (cleanupError) {
         console.error(`CRITICAL: Failed to clean up resources for restaurantId: ${restaurantId}`, cleanupError);
