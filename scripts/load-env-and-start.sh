@@ -46,9 +46,4 @@ echo "DB_HOST=$DB_HOST"
 echo "DB_PORT=$DB_PORT"
 echo "ALLOWED_ORIGINS=$ALLOWED_ORIGINS"
 
-echo "🚀 Starting backend with PM2..."
-pm2 delete backend || true
-pm2 start dist/server.js --name backend --update-env
-pm2 save
-
 echo "🎉 Deployment completed successfully!"
