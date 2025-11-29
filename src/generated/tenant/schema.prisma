@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../../src/generated/tenant"
+  provider      = "prisma-client-js"
+  output        = "../../src/generated/tenant"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -9,53 +10,53 @@ datasource db {
 }
 
 model Customer {
-  id            String   @id @default(uuid())
+  id            String       @id @default(uuid())
   name          String
   phone         String
   email         String?
   notes         String?
-  joinDate      DateTime @default(now())
-  loyaltyPoints Int      @default(0)
-  totalSpent    Float    @default(0)
-  totalOrders   Int      @default(0)
-  visitCount    Int      @default(0)
+  joinDate      DateTime     @default(now())
+  loyaltyPoints Int          @default(0)
+  totalSpent    Float        @default(0)
+  totalOrders   Int          @default(0)
+  visitCount    Int          @default(0)
   lastVisit     DateTime?
-  loyaltyTier   String   @default("bronze")
-  status        String   @default("active")
-  whatsappOptIn Boolean  @default(false)
+  loyaltyTier   String       @default("bronze")
+  status        String       @default("active")
+  whatsappOptIn Boolean      @default(false)
   birthDate     DateTime?
   anniversary   DateTime?
-  preferences   String[] @default([])
-  referralCode  String?  @unique
+  preferences   String[]     @default([])
+  referralCode  String?      @unique
   referredBy    String?
-  referralCount Int      @default(0)
-  updatedAt     DateTime @updatedAt
-  orders        Order[]  @relation("CustomerOrders")
+  referralCount Int          @default(0)
+  updatedAt     DateTime     @updatedAt
+  orders        Order[]      @relation("CustomerOrders")
   loyaltyLogs   LoyaltyLog[]
 }
 
 model Staff {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String   // <<< FIX: Added the missing password field
-  phone     String
-  pin       String
-  isActive  Boolean  @default(true)
-  salary    Float?
-  permissions String[] @default([])
-  dashboardModules String[] @default([])
-  joinDate  DateTime? @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  password         String // <<< FIX: Added the missing password field
+  phone            String
+  pin              String
+  isActive         Boolean   @default(true)
+  salary           Float?
+  permissions      String[]  @default([])
+  dashboardModules String[]  @default([])
+  joinDate         DateTime? @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   roleId String
   role   Role   @relation(fields: [roleId], references: [id])
 
   shiftLogs      ShiftLog[]
   salaryPayments SalaryPayment[]
-  waiterOrders   Order[] @relation("OrderWaiters")
-  createdOrders  Order[] @relation("OrderCreatedBy")
+  waiterOrders   Order[]         @relation("OrderWaiters")
+  createdOrders  Order[]         @relation("OrderCreatedBy")
 }
 
 model Restaurant {
@@ -83,44 +84,44 @@ model Restaurant {
 }
 
 model MenuItem {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   price       Float
   description String?
-  available   Boolean     @default(true)
-  isVeg       Boolean     @default(false)
+  available   Boolean  @default(true)
+  isVeg       Boolean  @default(false)
   spiceLevel  Int?
   cookingTime Int?
-  isPopular   Boolean     @default(false)
+  isPopular   Boolean  @default(false)
   allergens   String[]
   calories    Int?
   protein     Int?
   carbs       Int?
   fat         Int?
 
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  orderItems  OrderItem[] // Added back-relation to OrderItem
-  recipes     Recipe[]
+  orderItems OrderItem[] // Added back-relation to OrderItem
+  recipes    Recipe[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model LoyaltyReward {
-  id               String   @id @default(cuid())
-  title            String
-  description      String
-  pointsRequired   Int
-  type             String
-  value            Float
-  validUntil       DateTime?
-  maxRedemptions   Int?
-  currentRedemptions Int    @default(0)
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  title              String
+  description        String
+  pointsRequired     Int
+  type               String
+  value              Float
+  validUntil         DateTime?
+  maxRedemptions     Int?
+  currentRedemptions Int       @default(0)
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model LoyaltyRule {
@@ -131,83 +132,83 @@ model LoyaltyRule {
   pointsPerRupee Float?
   bonusPoints    Int?
   minOrderValue  Float?
-  isActive       Boolean @default(true)
+  isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
 
 model Order {
-  id                 String        @id @default(uuid())
-  orderNumber        String        @unique
-  orderSource        String        @default("POS")
-  status             String        @default("NEW")
-  priority           String        @default("NORMAL")
-  deliveryType       String        @default("DINE_IN")
-  subtotal           Float         @default(0)
-  taxAmount          Float         @default(0)
-  discount           Float         @default(0)
-  totalAmount        Float         @default(0)
-  paymentMethod      String        @default("cash")
-  paymentStatus      String        @default("paid")
-  paymentBreakdown   Json?
-  taxes              Json?
-  tipAmount          Float         @default(0)
-  guests             Int           @default(0)
+  id                  String    @id @default(uuid())
+  orderNumber         String    @unique
+  orderSource         String    @default("POS")
+  status              String    @default("NEW")
+  priority            String    @default("NORMAL")
+  deliveryType        String    @default("DINE_IN")
+  subtotal            Float     @default(0)
+  taxAmount           Float     @default(0)
+  discount            Float     @default(0)
+  totalAmount         Float     @default(0)
+  paymentMethod       String    @default("cash")
+  paymentStatus       String    @default("paid")
+  paymentBreakdown    Json?
+  taxes               Json?
+  tipAmount           Float     @default(0)
+  guests              Int       @default(0)
   specialInstructions String?
-  deliveryAddress    String?
-  metadata           Json?
-  orderTime          DateTime      @default(now())
-  estimatedTime      DateTime?
-  actualCookingTime  Int?
-  completedAt        DateTime?
-  rating             Int?
-  feedback           String?
+  deliveryAddress     String?
+  metadata            Json?
+  orderTime           DateTime  @default(now())
+  estimatedTime       DateTime?
+  actualCookingTime   Int?
+  completedAt         DateTime?
+  rating              Int?
+  feedback            String?
 
-  tableId            String?
-  table              Table?        @relation(fields: [tableId], references: [id])
+  tableId String?
+  table   Table?  @relation(fields: [tableId], references: [id])
 
-  customerId         String?
-  customer           Customer?     @relation("CustomerOrders", fields: [customerId], references: [id])
+  customerId String?
+  customer   Customer? @relation("CustomerOrders", fields: [customerId], references: [id])
 
-  waiterId           String?
-  waiter             Staff?        @relation("OrderWaiters", fields: [waiterId], references: [id])
+  waiterId String?
+  waiter   Staff?  @relation("OrderWaiters", fields: [waiterId], references: [id])
 
-  createdById        String?
-  createdBy          Staff?        @relation("OrderCreatedBy", fields: [createdById], references: [id])
+  createdById String?
+  createdBy   Staff?  @relation("OrderCreatedBy", fields: [createdById], references: [id])
 
-  items              OrderItem[]
+  items OrderItem[]
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
-  menuItemId  String?
-  menuItem    MenuItem? @relation(fields: [menuItemId], references: [id])
-  name        String
-  category    String?
-  quantity    Int      @default(1)
-  price       Float    @default(0)
-  notes       String?
-  modifiers   Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String    @id @default(cuid())
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id])
+  menuItemId String?
+  menuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  name       String
+  category   String?
+  quantity   Int       @default(1)
+  price      Float     @default(0)
+  notes      String?
+  modifiers  Json?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model Table {
-  id             String   @id @default(uuid())
+  id             String    @id @default(uuid())
   number         Int
   name           String?
   area           String?
-  status         String   @default("FREE")
-  capacity       Int      @default(4)
-  guests         Int      @default(0)
+  status         String    @default("FREE")
+  capacity       Int       @default(4)
+  guests         Int       @default(0)
   currentOrderId String?
   currentBillId  String?
   lastOrderAt    DateTime?
   notes          String?
 
-  orders         Order[]
+  orders Order[]
 }
 
 model Reservation {
@@ -307,64 +308,64 @@ model Recipe {
 }
 
 model Expense {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   title           String
   category        String
   subcategory     String?
   amount          Float
   netAmount       Float?
   taxAmount       Float?
-  date            DateTime @default(now())
+  date            DateTime  @default(now())
   vendor          String
   description     String?
   paymentMethod   String
   status          String
   receiptUrl      String?
   receiptNumber   String?
-  recurring       Boolean @default(false)
+  recurring       Boolean   @default(false)
   recurringPeriod String?
   approvedBy      String?
   supplierId      String?
   supplier        Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  tags            String[] @default([])
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  tags            String[]  @default([])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 model BudgetCategory {
   id          String   @id @default(cuid())
   name        String
-  budget      Float   @default(0)
-  spent       Float   @default(0)
+  budget      Float    @default(0)
+  spent       Float    @default(0)
   icon        String?
   color       String?
   description String?
-  isActive    Boolean @default(true)
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Category {
-  id          String     @id @default(cuid())
-  name        String     @unique
+  id          String   @id @default(cuid())
+  name        String   @unique
   description String?
   color       String?
-  type        String?    // e.g., 'menu', 'expense'
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  type        String? // e.g., 'menu', 'expense'
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  menuItems   MenuItem[]
+  menuItems MenuItem[]
 }
 
 model Role {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  permissions String[] @default([]) // <<< FIX: Changed from Json? to String[] for consistency
+  id               String   @id @default(cuid())
+  name             String   @unique
+  permissions      String[] @default([]) // <<< FIX: Changed from Json? to String[] for consistency
   dashboardModules String[] @default([])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  staff       Staff[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  staff            Staff[]
 }
 
 model Wastage {
