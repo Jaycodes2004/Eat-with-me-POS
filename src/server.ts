@@ -4,7 +4,7 @@ dotenv.config();
 import { createApp } from "./app";
 import { liveUpdates } from "./utils/liveUpdates";
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4002;
 
 (async () => {
   // Redis optional
