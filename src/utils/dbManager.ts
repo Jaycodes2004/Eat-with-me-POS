@@ -30,7 +30,7 @@ export function getTenantPrismaClientWithParams(
   if (prismaClients[dbName]) return prismaClients[dbName];
 
   const safePass = encode(dbPass);
-  const url = `postgresql://${dbUser}:${safePass}@${dbHost}:${dbPort}/${dbName}?schema=public`;
+  const url = `postgresql://${dbUser}:${safePass}@${dbHost}:${dbPort}/${dbName}?schema=public&sslmode=require`;
 
   process.env.DATABASE_URL = url;
   process.env.DATABASE_URL_TENANT = url;
