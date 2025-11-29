@@ -74,8 +74,6 @@
 // 	return app;
 // }
 
-/** @format */
-
 import express from 'express';
 import cors from 'cors';
 
@@ -109,26 +107,25 @@ export async function createApp(): Promise<express.Express> {
 	const app = express();
 
 	// ---------------------------------------
-	// CORS FIX — Required for Vercel + Ngrok
+	// CORS — Vercel + custom domains
 	// ---------------------------------------
-	const allowedOrigins = process.env.ALLOWED_ORIGINS
-		? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-		: [
-				'http://localhost:3000',
-				'http://localhost:5173',
-				'https://eat-with-me-pos-frontend.vercel.app',
-				'https://eat-with-me-frontend-is7z81mej-abhimaniyus-projects.vercel.app',
-				'https://carma-devout-transcendentally.ngrok-free.dev',
-				'https://*.ngrok-free.dev',
-				'https://eatwithme.easytomanage.xyz',
-				'https://admin.easytomanage.xyz',
-		  ];
+	const allowedOrigins = [
+		'http://localhost:3000',
+		'http://localhost:5173',
+		'https://eat-with-me-pos-frontend.vercel.app',
+		'https://eat-with-me-frontend-is7z81mej-abhimaniyus-projects.vercel.app',
+		'https://carma-devout-transcendentally.ngrok-free.dev',
+		'https://eatwithme.easytomanage.xyz',
+		'https://admin.easytomanage.xyz',
+	];
 
 	app.use(
 		cors({
 			origin: (origin, callback) => {
 				// Allow mobile apps / curl / server-to-server
 				if (!origin) return callback(null, true);
+				console.log('Incoming Origin:', origin);
+				console.log('Allowed Origins:', allowedOrigins);
 
 				if (allowedOrigins.includes(origin)) {
 					return callback(null, true);
@@ -148,7 +145,6 @@ export async function createApp(): Promise<express.Express> {
 			],
 		})
 	);
-
 	// Handle CORS preflight for all routes
 	app.options('*', (req, res) => {
 		const origin = req.headers.origin as string | undefined;
