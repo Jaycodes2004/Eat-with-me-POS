@@ -45,40 +45,28 @@ export async function createTenantUserAndDatabase(opts: {
 }) {
   const { dbUser, dbPassword, dbName } = opts;
   return withMasterClient(async (client) => {
-    await client.query("BEGIN");
-    try {
-      await client.query(
-        `CREATE USER "${dbUser}" WITH PASSWORD '${dbPassword.replace(/'/g, "''")}'`,
-      );
-      await client.query(
-        `CREATE DATABASE "${dbName}" OWNER "${dbUser}"`,
-      );
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    }
+    // 1) Create user
+    await client.query(
+      `CREATE USER "${dbUser}" WITH PASSWORD '${dbPassword.replace(/'/g, "''")}'`,
+    );
+    // 2) Create database (must NOT be inside a transaction)
+    await client.query(
+      `CREATE DATABASE "${dbName}" OWNER "${dbUser}"`,
+    );
   });
 }
 
 export async function dropTenantDatabaseAndUser(opts: { dbName: string; dbUser: string }) {
   const { dbName, dbUser } = opts;
   return withMasterClient(async (client) => {
-    await client.query("BEGIN");
-    try {
-      await client.query(
-        `SELECT pg_terminate_backend(pid)
-         FROM pg_stat_activity
-         WHERE datname = $1
-           AND pid <> pg_backend_pid()`,
-        [dbName],
-      );
-      await client.query(`DROP DATABASE IF EXISTS "${dbName}"`);
-      await client.query(`DROP ROLE IF EXISTS "${dbUser}"`);
-      await client.query("COMMIT");
-    } catch (err) {
-      await client.query("ROLLBACK");
-      throw err;
-    }
+    // 1) Terminate existing connections
+    await client.query(
+      `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()`,
+      [dbName],
+    );
+    // 2) Drop database (must NOT be in a transaction)
+    await client.query(`DROP DATABASE IF EXISTS "${dbName}"`);
+    // 3) Drop role
+    await client.query(`DROP ROLE IF EXISTS "${dbUser}"`);
   });
 }
