@@ -14,7 +14,6 @@ COPY . .
 
 # Fix permissions and generate Prisma client for both schemas
 RUN chmod -R +x /app/node_modules/.bin/ && \
-    npx prisma generate --schema=prisma/master/master.prisma && \
     npx prisma generate --schema=prisma/tenant/schema.prisma
 
 EXPOSE 4002
