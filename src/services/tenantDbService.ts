@@ -49,9 +49,13 @@ export async function createTenantUserAndDatabase(opts: {
     await client.query(
       `CREATE USER "${dbUser}" WITH PASSWORD '${dbPassword.replace(/'/g, "''")}'`,
     );
-    // 2) Create database (must NOT be inside a transaction)
+    // 2) Create database owned by master user first
     await client.query(
-      `CREATE DATABASE "${dbName}" OWNER "${dbUser}"`,
+      `CREATE DATABASE "${dbName}" OWNER "${MASTER_DB_USER}"`,
+    );
+    // 3) Then alter owner to the tenant user
+    await client.query(
+      `ALTER DATABASE "${dbName}" OWNER TO "${dbUser}"`,
     );
   });
 }
