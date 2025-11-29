@@ -76,8 +76,6 @@
 
 /** @format */
 
-/** @format */
-
 import express from 'express';
 import cors from 'cors';
 
@@ -111,7 +109,7 @@ export async function createApp(): Promise<express.Express> {
 	const app = express();
 
 	// ---------------------------------------
-	//  CORS FIX — Required for Vercel + Ngrok
+	// CORS FIX — Required for Vercel + Ngrok
 	// ---------------------------------------
 	const allowedOrigins = process.env.ALLOWED_ORIGINS
 		? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
@@ -131,13 +129,13 @@ export async function createApp(): Promise<express.Express> {
 			origin: (origin, callback) => {
 				// Allow mobile apps / curl / server-to-server
 				if (!origin) return callback(null, true);
-
 				if (allowedOrigins.includes(origin)) {
 					return callback(null, true);
 				}
 
 				console.warn('❌ CORS blocked:', origin);
-				return callback(new Error('Blocked by CORS: ' + origin));
+				// IMPORTANT: do NOT throw an Error, just reject
+				return callback(null, false);
 			},
 			credentials: true,
 			methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -153,7 +151,6 @@ export async function createApp(): Promise<express.Express> {
 	// Handle CORS preflight for all routes
 	app.options('*', (req, res) => {
 		const origin = req.headers.origin as string | undefined;
-
 		if (!origin || allowedOrigins.includes(origin)) {
 			if (origin) {
 				res.header('Access-Control-Allow-Origin', origin);
