@@ -45,11 +45,10 @@
 
 
 import { Request, Response, NextFunction } from "express";
-import { PrismaClient as MasterPrismaClient } from "../generated/master";
+
+import axios from 'axios';
 import { getTenantPrismaClientWithParams } from "../utils/dbManager";
 import { preloadSecrets } from "../utils/awsSecrets";
-
-const masterPrisma = new MasterPrismaClient();
 
 export async function tenantPrisma(req: Request, res: Response, next: NextFunction) {
   const headerId = req.headers["x-restaurant-id"] as string;
@@ -63,11 +62,13 @@ export async function tenantPrisma(req: Request, res: Response, next: NextFuncti
 
   try {
     // Use admin backend API to fetch tenant info
-    // const tenant = await masterPrisma.tenant.findUnique({
-    //   where: { restaurantId }
-    // });
-    // Master Prisma removed. Use admin backend API instead.
-
+    let tenant = null;
+    try {
+      const resTenant = await axios.get(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
+      tenant = resTenant.data;
+    } catch (err) {
+      // If not found, tenant remains null
+    }
     if (!tenant) return res.status(404).json({ message: "Tenant not found" });
 
     const secrets = await preloadSecrets([
