@@ -5,8 +5,18 @@ if (!MASTER_DB_URL) {
   throw new Error("DATABASE_URL_MASTER is not defined");
 }
 
+
+function createMasterClient() {
+  return new Client({
+    connectionString: MASTER_DB_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
+}
+
 async function withMasterClient<T>(fn: (client: Client) => Promise<T>): Promise<T> {
-  const client = new Client({ connectionString: MASTER_DB_URL });
+  const client = createMasterClient();
   await client.connect();
   try {
     return await fn(client);
