@@ -73,7 +73,7 @@ export async function runMigrationsForTenant(
   port: string
 ) {
   const safePass = encode(rootPass);
-  const url = `postgresql://${rootUser}:${safePass}@${host}:${port}/${dbName}?schema=public`;
+  const url = `postgresql://${rootUser}:${safePass}@${host}:${port}/${dbName}?schema=public&sslmode=require`;
   console.log("⚠️ MIGRATION URL:", url);
   process.env.DATABASE_URL = url;
   process.env.DATABASE_URL_TENANT = url;

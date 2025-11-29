@@ -19,7 +19,7 @@ if (!MASTER_DB_USER || !MASTER_DB_PASS || !MASTER_DB_HOST) {
 }
 
 function createMasterClient() {
-  const url = `postgresql://${encodeURIComponent(MASTER_DB_USER as string)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${MASTER_DB_HOST as string}:${MASTER_DB_PORT}/${MASTER_DB_NAME}?sslmode=require`;
+  const url = `postgresql://${encodeURIComponent(MASTER_DB_USER as string)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${MASTER_DB_HOST as string}:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
   return new Client({
     connectionString: url,
     ssl: {
