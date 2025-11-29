@@ -48,8 +48,7 @@ export async function createTenantUserAndDatabase(opts: {
     await client.query("BEGIN");
     try {
       await client.query(
-        `CREATE USER "${dbUser}" WITH PASSWORD $1`,
-        [dbPassword],
+        `CREATE USER "${dbUser}" WITH PASSWORD '${dbPassword.replace(/'/g, "''")}'`,
       );
       await client.query(
         `CREATE DATABASE "${dbName}" OWNER "${dbUser}"`,
