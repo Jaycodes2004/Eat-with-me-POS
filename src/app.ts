@@ -214,6 +214,8 @@
 // 	return app;
 // }
 
+import express from 'express';
+import cors from 'cors';
 import { tenantPrisma } from './middleware/tenantPrisma';
 import { authenticateToken } from './middleware/auth';
 
