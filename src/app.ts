@@ -76,6 +76,8 @@
 
 /** @format */
 
+/** @format */
+
 import express from 'express';
 import cors from 'cors';
 
@@ -116,8 +118,8 @@ export async function createApp(): Promise<express.Express> {
 		: [
 				'http://localhost:3000',
 				'http://localhost:5173',
-        'https://eat-with-me-pos-frontend.vercel.app',
-        "https://eat-with-me-frontend-is7z81mej-abhimaniyus-projects.vercel.app",
+				'https://eat-with-me-pos-frontend.vercel.app',
+				'https://eat-with-me-frontend-is7z81mej-abhimaniyus-projects.vercel.app',
 				'https://carma-devout-transcendentally.ngrok-free.dev',
 				'https://*.ngrok-free.dev',
 				'https://eatwithme.easytomanage.xyz',
@@ -147,6 +149,34 @@ export async function createApp(): Promise<express.Express> {
 			],
 		})
 	);
+
+	// Handle CORS preflight for all routes
+	app.options('*', (req, res) => {
+		const origin = req.headers.origin as string | undefined;
+
+		if (!origin || allowedOrigins.includes(origin)) {
+			if (origin) {
+				res.header('Access-Control-Allow-Origin', origin);
+				res.header('Vary', 'Origin');
+			}
+
+			res.header(
+				'Access-Control-Allow-Methods',
+				'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+			);
+			res.header(
+				'Access-Control-Allow-Headers',
+				req.headers['access-control-request-headers'] ||
+					'Content-Type,Authorization,X-Restaurant-Id,X-Tenant-Id'
+			);
+			res.header('Access-Control-Allow-Credentials', 'true');
+
+			return res.sendStatus(204);
+		}
+
+		console.warn('❌ Preflight blocked:', origin);
+		return res.sendStatus(403);
+	});
 
 	// Body parser
 	app.use(express.json());
