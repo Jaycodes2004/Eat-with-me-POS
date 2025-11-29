@@ -130,8 +130,14 @@ export async function signup(req: Request, res: Response) {
       if (resNewTenant.data && resNewTenant.data.restaurantId) {
         newTenantId = resNewTenant.data.restaurantId;
       }
-    } catch (err) {
-      // If error, fail
+    } catch (err: any) {
+      console.error("[Signup] Admin backend tenant create failed", {
+        restaurantId,
+        email,
+        status: err?.response?.status,
+        data: err?.response?.data,
+        message: err?.message,
+      });
       return res.status(500).json({ message: 'Failed to create tenant in master DB.' });
     }
 
