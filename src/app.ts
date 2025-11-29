@@ -129,12 +129,13 @@ export async function createApp(): Promise<express.Express> {
 			origin: (origin, callback) => {
 				// Allow mobile apps / curl / server-to-server
 				if (!origin) return callback(null, true);
+
 				if (allowedOrigins.includes(origin)) {
 					return callback(null, true);
 				}
 
 				console.warn('❌ CORS blocked:', origin);
-				// IMPORTANT: do NOT throw an Error, just reject
+				// Reject without throwing; CORS will simply not set headers
 				return callback(null, false);
 			},
 			credentials: true,
