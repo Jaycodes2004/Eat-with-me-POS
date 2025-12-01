@@ -6,127 +6,128 @@ import jwt from 'jsonwebtoken';
 import { getPrismClientForRestaurant } from '../lib/getPrismClientForRestaurant';
 
 export async function login(req: Request, res: Response) {
-	const { email, password } = req.body;
-	const restaurantId = req.headers['x-restaurant-id'] as string;
+  const { email, password, restaurantId: bodyRestaurantId } = req.body;
+  const headerRestaurantId = req.headers['x-restaurant-id'];
 
-	console.info('[Login] Incoming request', {
-		email,
-		hasPassword: Boolean(password),
-		restaurantId,
-	});
+  // Normalize restaurantId: prefer body, then header; ignore literal "undefined"
+  const restaurantId =
+    typeof bodyRestaurantId === 'string' && bodyRestaurantId !== 'undefined'
+      ? bodyRestaurantId
+      : typeof headerRestaurantId === 'string' && headerRestaurantId !== 'undefined'
+      ? headerRestaurantId
+      : undefined;
 
-	// Validate restaurant ID
-	if (!restaurantId) {
-		console.warn('[Login] Missing restaurant ID', { email });
-		return res.status(400).json({
-			message:
-				'Restaurant ID is missing or invalid. Please provide it in the X-Restaurant-Id header.',
-		});
-	}
+  console.info('[Login] Incoming request', {
+    email,
+    hasPassword: Boolean(password),
+    restaurantId,
+    bodyRestaurantId,
+    headerRestaurantId,
+  });
 
-	// Validate credentials
-	if (!email || !password) {
-		console.warn('[Login] Missing credentials', {
-			emailPresent: Boolean(email),
-			passwordPresent: Boolean(password),
-		});
-		return res
-			.status(400)
-			.json({ message: 'Email and password are required.' });
-	}
+  // Validate restaurant ID
+  if (!restaurantId) {
+    console.warn('[Login] Missing restaurant ID', { email, bodyRestaurantId, headerRestaurantId });
+    return res.status(400).json({
+      message:
+        'Restaurant ID is missing or invalid. Please send restaurantId in the request body or X-Restaurant-Id header.',
+    });
+  }
 
-	try {
-		// Get Prisma client for the restaurant
-		const prisma = await getPrismClientForRestaurant(restaurantId);
+  // Validate credentials
+  if (!email || !password) {
+    console.warn('[Login] Missing credentials', {
+      emailPresent: Boolean(email),
+      passwordPresent: Boolean(password),
+    });
+    return res.status(400).json({ message: 'Email and password are required.' });
+  }
 
-		console.info('[Login] Looking up staff by email', { email, restaurantId });
-		const staff = await prisma.staff.findUnique({ where: { email } });
+  try {
+    // Get Prisma client for the restaurant
+    const prisma = await getPrismClientForRestaurant(restaurantId);
 
-		if (staff && (await bcrypt.compare(password, staff.password))) {
-			console.info('[Login] Staff authenticated', { staffId: staff.id, email });
-			const role = await prisma.role.findUnique({
-				where: { id: staff.roleId },
-			});
-			const staffRecord = staff as any;
-			const roleRecord = role as any;
+    console.info('[Login] Looking up staff by email', { email, restaurantId });
+    const staff = await prisma.staff.findUnique({ where: { email } });
 
-			const tokenPayload = {
-				staffId: staff.id,
-				roleId: staff.roleId,
-				restaurantId,
-			};
+    if (staff && (await bcrypt.compare(password, staff.password))) {
+      console.info('[Login] Staff authenticated', { staffId: staff.id, email });
+      const role = await prisma.role.findUnique({
+        where: { id: staff.roleId },
+      });
+      const staffRecord = staff as any;
+      const roleRecord = role as any;
 
-			const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET!, {
-				expiresIn: '1d',
-			});
+      const tokenPayload = {
+        staffId: staff.id,
+        roleId: staff.roleId,
+        restaurantId,
+      };
 
-			const permissions: string[] =
-				Array.isArray(staffRecord.permissions) &&
-				staffRecord.permissions.length > 0
-					? staffRecord.permissions
-					: Array.isArray(roleRecord?.permissions)
-					? roleRecord.permissions
-					: [];
+      const accessToken = jwt.sign(tokenPayload, process.env.JWT_SECRET!, {
+        expiresIn: '1d',
+      });
 
-			const dashboardModules: string[] =
-				Array.isArray(staffRecord.dashboardModules) &&
-				staffRecord.dashboardModules.length > 0
-					? staffRecord.dashboardModules
-					: Array.isArray(roleRecord?.dashboardModules)
-					? roleRecord.dashboardModules
-					: [];
+      const permissions: string[] =
+        Array.isArray(staffRecord.permissions) && staffRecord.permissions.length > 0
+          ? staffRecord.permissions
+          : Array.isArray(roleRecord?.permissions)
+          ? roleRecord.permissions
+          : [];
 
-			res.json({
-				accessToken,
-				user: {
-					id: staff.id,
-					name: staff.name,
-					email: staff.email,
-					role: role?.name || 'No Role',
-					permissions,
-					dashboardModules,
-				},
-				restaurant: {
-					id: restaurantId,
-					useRedis: false,
-				},
-			});
-		} else {
-			console.warn('[Login] Invalid credentials', {
-				email,
-				hasStaffRecord: Boolean(staff),
-			});
-			res.status(401).json({ message: 'Invalid credentials.' });
-		}
-	} catch (error) {
-		const errorMsg = (error as Error)?.message || 'Unknown error';
-		console.error('[Login] Error:', {
-			email,
-			restaurantId,
-			error: errorMsg,
-			stack: (error as Error)?.stack,
-		});
+      const dashboardModules: string[] =
+        Array.isArray(staffRecord.dashboardModules) && staffRecord.dashboardModules.length > 0
+          ? staffRecord.dashboardModules
+          : Array.isArray(roleRecord?.dashboardModules)
+          ? roleRecord.dashboardModules
+          : [];
 
-		// Check specific error types
-		if (errorMsg.includes('Failed to fetch tenant info')) {
-			return res
-				.status(502)
-				.json({
-					message: 'Unable to connect to restaurant service. Please try again.',
-				});
-		}
+      res.json({
+        accessToken,
+        user: {
+          id: staff.id,
+          name: staff.name,
+          email: staff.email,
+          role: role?.name || 'No Role',
+          permissions,
+          dashboardModules,
+        },
+        restaurant: {
+          id: restaurantId,
+          useRedis: false,
+        },
+      });
+    } else {
+      console.warn('[Login] Invalid credentials', {
+        email,
+        hasStaffRecord: Boolean(staff),
+      });
+      res.status(401).json({ message: 'Invalid credentials.' });
+    }
+  } catch (error) {
+    const errorMsg = (error as Error)?.message || 'Unknown error';
+    console.error('[Login] Error:', {
+      email,
+      restaurantId,
+      error: errorMsg,
+      stack: (error as Error)?.stack,
+    });
 
-		if (
-			errorMsg.includes('Database credentials') ||
-			errorMsg.includes('Invalid tenant')
-		) {
-			return res
-				.status(500)
-				.json({
-					message: 'Internal server error: Database configuration issue.',
-				});
-		}
+    if (errorMsg.includes('Failed to fetch tenant info')) {
+      return res.status(502).json({
+        message: 'Unable to connect to restaurant service. Please try again.',
+      });
+    }
 
-		res.status(500).json({ message: 'Internal server error during login.' });
-	}
+    if (
+      errorMsg.includes('Database credentials') ||
+      errorMsg.includes('Invalid tenant')
+    ) {
+      return res.status(500).json({
+        message: 'Internal server error: Database configuration issue.',
+      });
+    }
+
+    res.status(500).json({ message: 'Internal server error during login.' });
+  }
 }
