@@ -17,8 +17,7 @@ export async function getPrismClientForRestaurant(restaurantId: string) {
     let tenant;
     try {
       const resTenant = await axios.get(
-        `${ADMIN_BACKEND_URL}/api/tenants/${restaurantId}`,
-        { timeout: 5000 } // Add timeout
+      `${ADMIN_BACKEND_URL}/api/tenants?restaurantId=${restaurantId}`,        { timeout: 5000 } // Add timeout
       );
       tenant = resTenant.data;
       console.info('[getPrismClientForRestaurant] Got tenant info:', { dbName: tenant?.dbName, restaurantId });
