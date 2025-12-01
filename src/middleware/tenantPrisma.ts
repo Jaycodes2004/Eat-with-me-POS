@@ -50,6 +50,8 @@ import axios from 'axios';
 import { getTenantPrismaClientWithParams } from "../utils/dbManager";
 import { preloadSecrets } from "../utils/awsSecrets";
 
+const ADMIN_BACKEND_URL = process.env.ADMIN_BACKEND_URL || 'https://admin.easytomanage.xyz';
+
 export async function tenantPrisma(req: Request, res: Response, next: NextFunction) {
   const headerId = req.headers["x-restaurant-id"] as string;
   const bodyId = (req.body as any)?.restaurantId;
@@ -64,7 +66,7 @@ export async function tenantPrisma(req: Request, res: Response, next: NextFuncti
     // Use admin backend API to fetch tenant info
     let tenant = null;
     try {
-      const resTenant = await axios.get(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
+      const resTenant = await axios.get(`${ADMIN_BACKEND_URL}/api/tenants/${restaurantId}`);
       tenant = resTenant.data;
     } catch (err) {
       // If not found, tenant remains null
