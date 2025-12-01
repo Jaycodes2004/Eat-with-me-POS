@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getTenantPrismaClientWithParams } from '../utils/dbManager';
 import { preloadSecrets } from '../utils/awsSecrets';
 
-const ADMIN_BACKEND_URL = process.env.ADMIN_BACKEND_URL || 'https://admin.easytomanage.xyz';
+
 
 /**
  * Get a Prisma client connected to a specific restaurant's tenant database
@@ -12,7 +12,7 @@ const ADMIN_BACKEND_URL = process.env.ADMIN_BACKEND_URL || 'https://admin.easyto
 export async function getPrismClientForRestaurant(restaurantId: string) {
   try {
     // Query the admin backend API to get tenant info
-    const resTenant = await axios.get(`${ADMIN_BACKEND_URL}/api/tenants/${restaurantId}`);
+    const resTenant = await axios.get(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
     const tenant = resTenant.data;
 
     if (!tenant) {

@@ -5,7 +5,7 @@ import { createTenantDatabaseAndUser, getTenantPrismaClientWithParams, runMigrat
 import { preloadSecrets } from '../utils/awsSecrets';
 import bcrypt from 'bcryptjs';
 
-const ADMIN_BACKEND_URL = process.env.ADMIN_BACKEND_URL || 'https://admin.easytomanage.xyz';
+
 async function generateUniqueRestaurantId(): Promise<string> {
   let isUnique = false;
   let restaurantId = '';
@@ -13,7 +13,7 @@ async function generateUniqueRestaurantId(): Promise<string> {
     restaurantId = Math.floor(1000000 + Math.random() * 9000000).toString();
     // Use admin backend API to check tenant by restaurantId
     try {
-      const res = await axios.get(`${ADMIN_BACKEND_URL}/api/tenants/${restaurantId}`);
+      const res = await axios.get(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
       if (!res.data) {
         isUnique = true;
       }
@@ -68,7 +68,7 @@ export async function signup(req: Request, res: Response) {
     // Use admin backend API to check tenant by email
     let tenantExists = false;
     try {
-      const resTenant = await axios.get(`${ADMIN_BACKEND_URL}/api/tenants?email=${encodeURIComponent(email)}`);
+      const resTenant = await axios.get(`https://admin.easytomanage.xyz/api/tenants?email=${encodeURIComponent(email)}`);
       if (resTenant.data) {
         tenantExists = true;
       }
@@ -117,7 +117,7 @@ export async function signup(req: Request, res: Response) {
     // Use admin backend API to create tenant
     let newTenantId = restaurantId;
     try {
-      const resNewTenant = await axios.post(`${ADMIN_BACKEND_URL}/api/tenants`, {
+      const resNewTenant = await axios.post(`https://admin.easytomanage.xyz/api/tenants`, {
         name: restaurantName,
         email,
         restaurantId,
@@ -253,7 +253,7 @@ export async function signup(req: Request, res: Response) {
         // Also remove the record from the master DB if it was created
         // Use admin backend API to delete tenant by restaurantId
         try {
-          await axios.delete(`${ADMIN_BACKEND_URL}/api/tenants/${restaurantId}`);
+          await axios.delete(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
         } catch (err) {
           // Ignore cleanup errors
         }
