@@ -78,57 +78,27 @@ export async function login(req: Request, res: Response) {
 					? roleRecord.dashboardModules
 					: [];
 
-			res.json({
-				accessToken,
-				user: {
-					id: staff.id,
-					name: staff.name,
-					email: staff.email,
-					role: role?.name || 'No Role',
-					permissions,
-					dashboardModules,
-				},
-				restaurant: {
-					id: restaurantId,
-					useRedis: false,
-				},
-			});
-		} else {
-			console.warn('[Login] Invalid credentials', {
-				email,
-				hasStaffRecord: Boolean(staff),
-			});
-			res.status(401).json({ message: 'Invalid credentials.' });
-		}
-	} catch (error) {
-		const errorMsg = (error as Error)?.message || 'Unknown error';
-		console.error('[Login] Error:', {
-			email,
-			restaurantId,
-			error: errorMsg,
-			stack: (error as Error)?.stack,
-		});
-
-		// Check specific error types
-		if (errorMsg.includes('Failed to fetch tenant info')) {
-			return res
-				.status(502)
-				.json({
-					message: 'Unable to connect to restaurant service. Please try again.',
-				});
-		}
-
-		if (
-			errorMsg.includes('Database credentials') ||
-			errorMsg.includes('Invalid tenant')
-		) {
-			return res
-				.status(500)
-				.json({
-					message: 'Internal server error: Database configuration issue.',
-				});
-		}
-
-		res.status(500).json({ message: 'Internal server error during login.' });
-	}
+      res.json({
+        accessToken,
+        user: {
+          id: staff.id,
+          name: staff.name,
+          email: staff.email,
+          role: role?.name || 'No Role',
+          permissions,
+          dashboardModules,
+        },
+        restaurant: {
+          id: restaurantId,
+          useRedis: false,
+        },
+      });
+    } else {
+      console.warn('[Login] Invalid credentials', { email, hasStaffRecord: Boolean(staff) });
+      res.status(401).json({ message: 'Invalid credentials.' });
+    }
+  } catch (error) {
+    console.error('[Login] Error', { email, restaurantId, error: (error as Error)?.message, stack: (error as Error)?.stack });
+    res.status(500).json({ message: 'Internal server error during login.' });
+  }
 }
