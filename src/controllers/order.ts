@@ -6,63 +6,64 @@ import { liveUpdates } from '../utils/liveUpdates';
 const ORDER_EVENT = 'orders:updated';
 
 const toUpper = (value: unknown, fallback: string) => {
-  if (!value) return fallback;
-  return String(value).toUpperCase();
+	if (!value) return fallback;
+	return String(value).toUpperCase();
 };
 
 const toLower = (value: unknown, fallback: string) => {
-  if (!value) return fallback;
-  return String(value).toLowerCase();
+	if (!value) return fallback;
+	return String(value).toLowerCase();
 };
 
 const mapOrderItem = (item: any) => ({
-  id: item.id,
-  orderId: item.orderId,
-  menuItemId: item.menuItemId,
-  name: item.name,
-  category: item.category,
-  quantity: item.quantity,
-  price: item.price,
-  notes: item.notes,
-  modifiers: item.modifiers || [],
+	id: item.id,
+	orderId: item.orderId,
+	menuItemId: item.menuItemId,
+	name: item.name,
+	category: item.category,
+	quantity: item.quantity,
+	price: item.price,
+	notes: item.notes,
+	modifiers: item.modifiers || [],
 });
 
 const mapOrderRecord = (order: any) => ({
-  id: order.id,
-  orderNumber: order.orderNumber,
-  tableId: order.tableId,
-  tableNumber: order.table?.number || null,
-  orderSource: toLower(order.orderSource, 'pos'),
-  status: toLower(order.status, 'new'),
-  priority: toLower(order.priority, 'normal'),
-  deliveryType: toLower(order.deliveryType, 'dine_in'),
-  subtotal: Number(order.subtotal) || 0,
-  taxAmount: Number(order.taxAmount) || 0,
-  discount: Number(order.discount) || 0,
-  totalAmount: Number(order.totalAmount) || 0,
-  paymentMethod: order.paymentMethod,
-  paymentStatus: order.paymentStatus,
-  paymentBreakdown: order.paymentBreakdown || {},
-  taxes: order.taxes || [],
-  tipAmount: Number(order.tipAmount) || 0,
-  waiterId: order.waiterId,
-  waiterName: order.waiter?.name || null,
-  customerId: order.customerId,
-  customerName: order.customer?.name || null,
-  customerPhone: order.customer?.phone || null,
-  orderTime: order.orderTime,
-  estimatedTime: order.estimatedTime,
-  actualCookingTime: order.actualCookingTime,
-  completedAt: order.completedAt,
-  deliveryAddress: order.deliveryAddress,
-  specialInstructions: order.specialInstructions,
-  feedback: order.feedback,
-  rating: order.rating,
-  metadata: order.metadata || {},
-  items: Array.isArray(order.items) ? order.items.map(mapOrderItem) : [],
+	id: order.id,
+	orderNumber: order.orderNumber,
+	tableId: order.tableId,
+	tableNumber: order.table?.number || null,
+	orderSource: toLower(order.orderSource, 'pos'),
+	status: toLower(order.status, 'new'),
+	priority: toLower(order.priority, 'normal'),
+	deliveryType: toLower(order.deliveryType, 'dine_in'),
+	subtotal: Number(order.subtotal) || 0,
+	taxAmount: Number(order.taxAmount) || 0,
+	discount: Number(order.discount) || 0,
+	totalAmount: Number(order.totalAmount) || 0,
+	paymentMethod: order.paymentMethod,
+	paymentStatus: order.paymentStatus,
+	paymentBreakdown: order.paymentBreakdown || {},
+	taxes: order.taxes || [],
+	tipAmount: Number(order.tipAmount) || 0,
+	waiterId: order.waiterId,
+	waiterName: order.waiter?.name || null,
+	customerId: order.customerId,
+	customerName: order.customer?.name || null,
+	customerPhone: order.customer?.phone || null,
+	orderTime: order.orderTime,
+	estimatedTime: order.estimatedTime,
+	actualCookingTime: order.actualCookingTime,
+	completedAt: order.completedAt,
+	deliveryAddress: order.deliveryAddress,
+	specialInstructions: order.specialInstructions,
+	feedback: order.feedback,
+	rating: order.rating,
+	metadata: order.metadata || {},
+	items: Array.isArray(order.items) ? order.items.map(mapOrderItem) : [],
 });
 
-const generateOrderNumber = () => `ORD-${Date.now().toString(36).toUpperCase()}`;
+const generateOrderNumber = () =>
+	`ORD-${Date.now().toString(36).toUpperCase()}`;
 
 export async function getAllOrders(req: Request, res: Response) {
 	const prisma = (req as any).prisma;
@@ -84,13 +85,20 @@ export async function getAllOrders(req: Request, res: Response) {
 }
 
 export async function createOrder(req: Request, res: Response) {
+	console.log('➡️ createOrder called', {
+		body: req.body,
+		tenant: (req as any).tenant?.id,
+	});
 	const prisma = (req as any).prisma;
 	try {
 		const tenant = (req as any).tenant;
 		const useRedis = (req as any).useRedis;
-		const { items, customerId, tableId, waiterId, orderTime, ...orderData } = req.body;
+		const { items, customerId, tableId, waiterId, orderTime, ...orderData } =
+			req.body;
 		if (!items || items.length === 0) {
-			return res.status(400).json({ error: 'Order must contain at least one item.' });
+			return res
+				.status(400)
+				.json({ error: 'Order must contain at least one item.' });
 		}
 
 		const normalizedItems = items.map((item: any) => ({
@@ -103,7 +111,10 @@ export async function createOrder(req: Request, res: Response) {
 			modifiers: item.modifiers || [],
 		}));
 
-		const subtotal = normalizedItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0);
+		const subtotal = normalizedItems.reduce(
+			(sum: number, item: any) => sum + item.price * item.quantity,
+			0
+		);
 		const totalAmount = orderData.totalAmount ?? subtotal;
 		const taxAmount = orderData.taxAmount ?? 0;
 		const discount = orderData.discount ?? 0;
@@ -151,7 +162,12 @@ export async function createOrder(req: Request, res: Response) {
 				where: { id: tableId },
 				data: {
 					status: 'OCCUPIED',
-					guests: orderData.guests || normalizedItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
+					guests:
+						orderData.guests ||
+						normalizedItems.reduce(
+							(sum: number, item: any) => sum + item.quantity,
+							0
+						),
 					currentOrderId: newOrder.id,
 					lastOrderAt: new Date(),
 				},
@@ -175,7 +191,7 @@ export async function createOrder(req: Request, res: Response) {
 			tenant.restaurantId,
 			ORDER_EVENT,
 			{ type: 'created', order: mapOrderRecord(newOrder) },
-			useRedis,
+			useRedis
 		);
 
 		res.status(201).json(mapOrderRecord(newOrder));
@@ -204,12 +220,18 @@ export async function getOrderById(req: Request, res: Response) {
 }
 
 export async function updateOrder(req: Request, res: Response) {
+	console.log('➡️ updateOrder called', {
+		params: req.params,
+		body: req.body,
+		tenant: (req as any).tenant?.id,
+	});
 	const prisma = (req as any).prisma;
 	const { id } = req.params;
 	try {
 		const tenant = (req as any).tenant;
 		const useRedis = (req as any).useRedis;
-		const { status, tableId, items, waiterId, customerId, ...updateData } = req.body;
+		const { status, tableId, items, waiterId, customerId, ...updateData } =
+			req.body;
 
 		const data: any = { ...updateData };
 
@@ -221,15 +243,21 @@ export async function updateOrder(req: Request, res: Response) {
 		}
 
 		if (tableId !== undefined) {
-			data.table = tableId ? { connect: { id: tableId } } : { disconnect: true };
+			data.table = tableId
+				? { connect: { id: tableId } }
+				: { disconnect: true };
 		}
 
 		if (waiterId !== undefined) {
-			data.waiter = waiterId ? { connect: { id: waiterId } } : { disconnect: true };
+			data.waiter = waiterId
+				? { connect: { id: waiterId } }
+				: { disconnect: true };
 		}
 
 		if (customerId !== undefined) {
-			data.customer = customerId ? { connect: { id: customerId } } : { disconnect: true };
+			data.customer = customerId
+				? { connect: { id: customerId } }
+				: { disconnect: true };
 		}
 
 		if (items && Array.isArray(items)) {
@@ -258,7 +286,8 @@ export async function updateOrder(req: Request, res: Response) {
 
 		// Update table status based on order state
 		if (updatedOrder.tableId) {
-			const tableStatus = updatedOrder.status === 'COMPLETED' ? 'FREE' : 'OCCUPIED';
+			const tableStatus =
+				updatedOrder.status === 'COMPLETED' ? 'FREE' : 'OCCUPIED';
 			await prisma.table.update({
 				where: { id: updatedOrder.tableId },
 				data: {
@@ -273,7 +302,7 @@ export async function updateOrder(req: Request, res: Response) {
 			tenant.restaurantId,
 			ORDER_EVENT,
 			{ type: 'updated', order: mapOrderRecord(updatedOrder) },
-			useRedis,
+			useRedis
 		);
 
 		res.json(mapOrderRecord(updatedOrder));
@@ -283,6 +312,10 @@ export async function updateOrder(req: Request, res: Response) {
 }
 
 export async function deleteOrder(req: Request, res: Response) {
+	console.log('➡️ deleteOrder called', {
+		params: req.params,
+		tenant: (req as any).tenant?.id,
+	});
 	const prisma = (req as any).prisma;
 	const { id } = req.params;
 	try {
@@ -309,7 +342,7 @@ export async function deleteOrder(req: Request, res: Response) {
 			tenant.restaurantId,
 			ORDER_EVENT,
 			{ type: 'deleted', orderId: id },
-			useRedis,
+			useRedis
 		);
 
 		res.json({ deleted: true });
@@ -330,13 +363,23 @@ export async function searchOrders(req: Request, res: Response) {
 				AND: [
 					q
 						? {
-							OR: [
-								{ orderNumber: { contains: q as string, mode: 'insensitive' } },
-								{ customer: { name: { contains: q as string, mode: 'insensitive' } } },
-								{ table: { name: { contains: q as string, mode: 'insensitive' } } },
-							],
-						}
-					: {},
+								OR: [
+									{
+										orderNumber: { contains: q as string, mode: 'insensitive' },
+									},
+									{
+										customer: {
+											name: { contains: q as string, mode: 'insensitive' },
+										},
+									},
+									{
+										table: {
+											name: { contains: q as string, mode: 'insensitive' },
+										},
+									},
+								],
+						  }
+						: {},
 					tableId ? { tableId: tableId as string } : {},
 					status ? { status: toUpper(status, 'NEW') } : {},
 					source ? { orderSource: toUpper(source, 'POS') } : {},
