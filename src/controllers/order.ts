@@ -85,7 +85,7 @@ export async function getAllOrders(req: Request, res: Response) {
 }
 
 export async function createOrder(req: Request, res: Response) {
-	console.log('➡️ createOrder called', {
+	console.info('➡️ createOrder called', {
 		body: req.body,
 		tenant: (req as any).tenant?.id,
 	});
@@ -220,7 +220,7 @@ export async function getOrderById(req: Request, res: Response) {
 }
 
 export async function updateOrder(req: Request, res: Response) {
-	console.log('➡️ updateOrder called', {
+	console.info('➡️ updateOrder called', {
 		params: req.params,
 		body: req.body,
 		tenant: (req as any).tenant?.id,
@@ -312,7 +312,7 @@ export async function updateOrder(req: Request, res: Response) {
 }
 
 export async function deleteOrder(req: Request, res: Response) {
-	console.log('➡️ deleteOrder called', {
+	console.info('➡️ deleteOrder called', {
 		params: req.params,
 		tenant: (req as any).tenant?.id,
 	});
