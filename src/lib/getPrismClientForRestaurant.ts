@@ -1,68 +1,184 @@
-import axios from 'axios';
-import { getTenantPrismaClientWithParams } from '../utils/dbManager';
-import { preloadSecrets } from '../utils/awsSecrets';
+import { PrismaClient } from "@prisma/client";
+import { preloadSecrets } from "../utils/awsSecrets";
 
-const ADMIN_BACKEND_URL = process.env.ADMIN_BACKEND_URL || 'https://admin.easytomanage.xyz';
+const prismClientCache: Map<string, PrismaClient> = new Map();
 
-/**
- * Get a Prisma client connected to a specific restaurant's tenant database
- * @param restaurantId - The restaurant ID to connect to
- * @returns A Prisma client for the tenant database
- */
+interface DatabaseCredentials {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  database: string;
+}
+
 export async function getPrismClientForRestaurant(restaurantId: string) {
+  console.log(
+    `[getPrismClientForRestaurant] Fetching tenant info for tenant: ${restaurantId}`
+  );
+
+  if (prismClientCache.has(restaurantId)) {
+    console.log(
+      `[getPrismClientForRestaurant] Using cached Prisma client for tenant: ${restaurantId}`
+    );
+    return prismClientCache.get(restaurantId)!;
+  }
+
+  // Master client: points to master DB (with Tenant model)
+  const masterPrisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL_MASTER,
+      },
+    },
+  });
+
   try {
-    console.info('[getPrismClientForRestaurant] Fetching tenant info for restaurant:', restaurantId);
-    
-    // Query the admin backend API to get tenant info
-    let tenant;
-    try {
-      const resTenant = await axios.get(
-      `${ADMIN_BACKEND_URL}/api/tenants/${encodeURIComponent(restaurantId)}`,        { timeout: 5000 } // Add timeout
-      );
-      tenant = resTenant.data;
-      console.info('[getPrismClientForRestaurant] Got tenant info:', { dbName: tenant?.dbName, restaurantId });
-    } catch (axiosError: any) {
-      console.error('[getPrismClientForRestaurant] Axios error fetching tenant:', {
-        status: axiosError.response?.status,
-        message: axiosError.message,
-        url: axiosError.config?.url
-      });
-      throw new Error(`Failed to fetch tenant info from admin backend: ${axiosError.message}`);
+    // Look up tenant in master DB
+    const tenantInfo = await masterPrisma.tenant.findUnique({
+      where: { id: restaurantId }, // or { restaurantId } if that’s your key
+      select: {
+        id: true,
+        name: true,
+        dbName: true,
+        dbUser: true,
+        dbPassword: true,
+      },
+    });
+
+    await masterPrisma.$disconnect();
+
+    if (!tenantInfo) {
+      throw new Error(`Tenant ${restaurantId} not found in master database`);
     }
 
-    if (!tenant || !tenant.dbName) {
-      throw new Error(`Invalid tenant data for restaurant ${restaurantId}`);
-    }
-
-    // Load database credentials from AWS Secrets Manager
-    console.info('[getPrismClientForRestaurant] Loading database credentials');
-    const secrets = await preloadSecrets([
-      '/eatwithme/db-user',
-      '/eatwithme/db-password',
-      '/eatwithme/db-host',
-      '/eatwithme/db-port',
-    ]);
-
-    if (!secrets['/eatwithme/db-user'] || !secrets['/eatwithme/db-password']) {
-      throw new Error('Database credentials not found in AWS Secrets Manager');
-    }
-
-    console.info('[getPrismClientForRestaurant] Creating Prisma client for tenant database');
-    
-    // Create and return a Prisma client for the tenant database
-    const prisma = getTenantPrismaClientWithParams(
-      tenant.dbName,
-      secrets['/eatwithme/db-user'],
-      secrets['/eatwithme/db-password'],
-      secrets['/eatwithme/db-host'],
-      secrets['/eatwithme/db-port']
+    console.log(
+      `[getPrismClientForRestaurant] Got tenant info:`,
+      tenantInfo
     );
 
-    console.info('[getPrismClientForRestaurant] Prisma client created successfully');
-    return prisma;
+    // Build DB name
+    const dbName = tenantInfo.dbName || `tenant_${restaurantId}`;
+
+    console.log(`[getPrismClientForRestaurant] Loading database credentials`);
+
+    const credentials = await loadDatabaseCredentials(dbName, restaurantId);
+    const tenantDatabaseUrl = buildConnectionString(credentials);
+
+    const tenantPrisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: tenantDatabaseUrl,
+        },
+      },
+    });
+
+    // Test connection
+    await tenantPrisma.$queryRaw`SELECT 1`;
+    console.log(
+      `[getPrismClientForRestaurant] Successfully connected to tenant database: ${dbName}`
+    );
+
+    prismClientCache.set(restaurantId, tenantPrisma);
+
+    return tenantPrisma;
   } catch (error) {
-    const errorMsg = (error as Error)?.message || String(error);
-    console.error('[getPrismClientForRestaurant] Error connecting to tenant database:', errorMsg);
-    throw error; // Re-throw for the controller to handle
+    console.error(
+      `[getPrismClientForRestaurant] Error connecting to tenant database:`,
+      error
+    );
+    await masterPrisma.$disconnect();
+    throw error;
   }
+}
+
+async function loadDatabaseCredentials(
+  dbName: string,
+  restaurantId: string
+): Promise<DatabaseCredentials> {
+  const isDevelopment = process.env.NODE_ENV === "development";
+
+  if (isDevelopment) {
+    console.log(
+      `[loadDatabaseCredentials] Development mode - loading from environment variables`
+    );
+
+    const hostKey = `TENANT_DB_HOST_${restaurantId}`;
+    const portKey = `TENANT_DB_PORT_${restaurantId}`;
+    const userKey = `TENANT_DB_USER_${restaurantId}`;
+    const passwordKey = `TENANT_DB_PASSWORD_${restaurantId}`;
+
+    if (
+      process.env[hostKey] &&
+      process.env[userKey] &&
+      process.env[passwordKey]
+    ) {
+      console.log(
+        `[loadDatabaseCredentials] Using restaurant-specific credentials for ${restaurantId}`
+      );
+      return {
+        host: process.env[hostKey]!,
+        port: parseInt(process.env[portKey] || "5432"),
+        username: process.env[userKey]!,
+        password: process.env[passwordKey]!,
+        database: dbName,
+      };
+    }
+
+    console.log(`[loadDatabaseCredentials] Using generic tenant credentials`);
+    return {
+      host: process.env.TENANT_DB_HOST || "localhost",
+      port: parseInt(process.env.TENANT_DB_PORT || "5432"),
+      username: process.env.TENANT_DB_USER || "postgres",
+      password: process.env.TENANT_DB_PASSWORD || "",
+      database: dbName,
+    };
+  }
+
+  console.log(
+    `[loadDatabaseCredentials] Production mode - loading from AWS Secrets Manager`
+  );
+  try {
+    const credentials = await preloadSecrets(restaurantId);
+    return credentials;
+  } catch (error) {
+    console.error(
+      `[loadDatabaseCredentials] Failed to load credentials from Secrets Manager`,
+      error
+    );
+    throw new Error(
+      `Could not load database credentials for restaurant ${restaurantId} from Secrets Manager`
+    );
+  }
+}
+
+function buildConnectionString(credentials: DatabaseCredentials): string {
+  const { host, port, username, password, database } = credentials;
+  const encodedPassword = encodeURIComponent(password);
+  const connectionString = `postgresql://${username}:${encodedPassword}@${host}:${port}/${database}?schema=public`;
+  console.log(
+    `[buildConnectionString] Built connection string for database: ${database} at ${host}:${port}`
+  );
+  return connectionString;
+}
+
+export async function disconnectAllClients() {
+  console.log(
+    `[disconnectAllClients] Disconnecting ${prismClientCache.size} Prisma clients...`
+  );
+
+  for (const [restaurantId, client] of prismClientCache.entries()) {
+    try {
+      await client.$disconnect();
+      console.log(
+        `[disconnectAllClients] Disconnected client for restaurant: ${restaurantId}`
+      );
+    } catch (error) {
+      console.error(
+        `[disconnectAllClients] Error disconnecting client for restaurant ${restaurantId}:`,
+        error
+      );
+    }
+  }
+
+  prismClientCache.clear();
 }
