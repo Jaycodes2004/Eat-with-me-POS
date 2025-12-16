@@ -5,7 +5,7 @@
 // import express from 'express';
 
 // import cors from 'cors';
-// import { tenantPrisma } from './middleware/tenantPrisma';
+// import { tenantPrismaMiddleware } from './middleware/tenantPrismaMiddleware';
 // import { authenticateToken } from './middleware/auth';
 
 // // --- FIX: Use the correct import style for each specific route ---
@@ -47,7 +47,7 @@
 // 	// --- Protected Routes ---
 // 	// All routes below this point require a tenant context and a valid authentication token.
 // 	app.use('/api', authenticateToken);
-// 	app.use('/api', tenantPrisma);
+// 	app.use('/api', tenantPrismaMiddleware);
 
 // 	// Wire up all your API routes to the /api base path
 // 	app.use('/api/staff', staffRoutes);
@@ -77,7 +77,7 @@
 // import express from 'express';
 // import cors from 'cors';
 
-// import { tenantPrisma } from './middleware/tenantPrisma';
+// import { tenantPrismaMiddleware } from './middleware/tenantPrismaMiddleware';
 // import { authenticateToken } from './middleware/auth';
 
 // // Routes
@@ -185,7 +185,7 @@
 // 	// Protected Routes
 // 	// ------------------------
 // 	app.use('/api', authenticateToken);
-// 	app.use('/api', tenantPrisma);
+// 	app.use('/api', tenantPrismaMiddleware);
 
 // 	// ------------------------
 // 	// Tenant Routes
@@ -216,7 +216,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import { tenantPrisma } from './middleware/tenantPrisma';
+import { tenantPrismaMiddleware } from './middleware/tenantPrismaMiddleware';
 import { authenticateToken } from './middleware/auth';
 
 // Routes
@@ -272,7 +272,7 @@ export async function createApp(): Promise<express.Express> {
 	// Protected Routes
 	// ------------------------
 	app.use('/api', authenticateToken);
-	app.use('/api', tenantPrisma);
+	app.use('/api', tenantPrismaMiddleware);
 
 	// ------------------------
 	// Tenant Routes
