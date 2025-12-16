@@ -98,26 +98,30 @@ async function loadDatabaseCredentials(
   }
 
   console.log(
-    `[loadDatabaseCredentials] Production mode - loading from AWS Secrets Manager`
+    `[loadDatabaseCredentials] 104105
+    Secrets Manager`
   );
 
-  try {
-    // preloadSecrets takes a single key and returns a string value
-    const host = await preloadSecrets(`TENANT_DB_HOST_${restaurantId}`);
-    const portStr = await preloadSecrets(`TENANT_DB_PORT_${restaurantId}`);
-    const user = await preloadSecrets(`TENANT_DB_USER_${restaurantId}`);
-    const password = await preloadSecrets(
-      `TENANT_DB_PASSWORD_${restaurantId}`
-    );
+  106try {
+        const secrets = await preloadSecrets([
+      `TENANT_DB_HOST_${restaurantId}`,
+      `TENANT_DB_PORT_${restaurantId}`,
+      `TENANT_DB_USER_${restaurantId}`,
+      `TENANT_DB_PASSWORD_${restaurantId}`,
+    ]);
+
+    const hostKey = `TENANT_DB_HOST_${restaurantId}`;
+    const portKey = `TENANT_DB_PORT_${restaurantId}`;
+    const userKey = `TENANT_DB_USER_${restaurantId}`;
+    const passwordKey = `TENANT_DB_PASSWORD_${restaurantId}`;
 
     return {
-      host,
-      port: parseInt(portStr || '5432', 10),
-      username: user,
-      password,
+      host: secrets[hostKey],
+      port: parseInt(secrets[portKey] || '5432', 10),
+      username: secrets[userKey],
+      password: secrets[passwordKey],
       database: dbName,
-    };
-  } catch (error) {
+        } catch (error) {
     console.error(
       `[loadDatabaseCredentials] Failed to load credentials from Secrets Manager`,
       error
@@ -125,37 +129,5 @@ async function loadDatabaseCredentials(
     throw new Error(
       `Could not load database credentials for restaurant ${restaurantId} from Secrets Manager`
     );
-  }
-}
-
-function buildConnectionString(credentials: DatabaseCredentials): string {
-  const { host, port, username, password, database } = credentials;
-  const encodedPassword = encodeURIComponent(password);
-  const connectionString = `postgresql://${username}:${encodedPassword}@${host}:${port}/${database}?schema=public`;
-  console.log(
-    `[buildConnectionString] Built connection string for database: ${database} at ${host}:${port}`
-  );
-  return connectionString;
-}
-
-export async function disconnectAllClients() {
-  console.log(
-    `[disconnectAllClients] Disconnecting ${prismClientCache.size} Prisma clients...`
-  );
-
-  for (const [restaurantId, client] of prismClientCache.entries()) {
-    try {
-      await client.$disconnect();
-      console.log(
-        `[disconnectAllClients] Disconnected client for restaurant: ${restaurantId}`
-      );
-    } catch (error) {
-      console.error(
-        `[disconnectAllClients] Error disconnecting client for restaurant ${restaurantId}:`,
-        error
-      );
     }
-  }
-
-  prismClientCache.clear();
-}
+    
