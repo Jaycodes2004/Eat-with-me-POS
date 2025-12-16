@@ -131,4 +131,5 @@ async function loadDatabaseCredentials(
       `Could not load database credentials for restaurant ${restaurantId} from Secrets Manager`
     );
     }
+          }
     
