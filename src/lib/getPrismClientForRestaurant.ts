@@ -98,11 +98,11 @@ async function loadDatabaseCredentials(
   }
 
   console.log(
-    `[loadDatabaseCredentials] 104105
+    `[loadDatabaseCredentials] 
     Secrets Manager`
   );
 
-  106try {
+  try {
         const secrets = await preloadSecrets([
       `TENANT_DB_HOST_${restaurantId}`,
       `TENANT_DB_PORT_${restaurantId}`,
