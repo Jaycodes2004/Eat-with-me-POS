@@ -132,4 +132,8 @@ async function loadDatabaseCredentials(
     );
     }
           }
+
+function buildConnectionString(credentials: DatabaseCredentials): string {
+            return `postgresql://${credentials.username}:${credentials.password}@${credentials.host}:${credentials.port}/${credentials.database}`;
+          }
     
