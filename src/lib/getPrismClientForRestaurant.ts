@@ -1,4 +1,4 @@
-/** @format */
+          /** @format */
 
 import { PrismaClient } from '@prisma/client';
 import { preloadSecrets } from '../utils/awsSecrets';
@@ -121,6 +121,7 @@ async function loadDatabaseCredentials(
       username: secrets[userKey],
       password: secrets[passwordKey],
       database: dbName,
+          };
         } catch (error) {
     console.error(
       `[loadDatabaseCredentials] Failed to load credentials from Secrets Manager`,
