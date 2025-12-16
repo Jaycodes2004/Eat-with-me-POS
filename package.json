@@ -8,7 +8,7 @@
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "postbuild": "cp -r src/generated dist/"
+    "postbuild": "xcopy src\\generated dist\\generated /E /I /Y"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.932.0",

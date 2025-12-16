@@ -1,5 +1,7 @@
-import { PrismaClient } from "@prisma/client";
-import { preloadSecrets } from "../utils/awsSecrets";
+/** @format */
+
+import { PrismaClient } from '@prisma/client';
+import { preloadSecrets } from '../utils/awsSecrets';
 
 const prismClientCache: Map<string, PrismaClient> = new Map();
 
@@ -13,7 +15,7 @@ interface DatabaseCredentials {
 
 export async function getPrismClientForRestaurant(restaurantId: string) {
   console.log(
-    `[getPrismClientForRestaurant] Fetching tenant info for tenant: ${restaurantId}`
+    `[getPrismClientForRestaurant] Creating tenant client for restaurant: ${restaurantId}`
   );
 
   if (prismClientCache.has(restaurantId)) {
@@ -23,79 +25,36 @@ export async function getPrismClientForRestaurant(restaurantId: string) {
     return prismClientCache.get(restaurantId)!;
   }
 
-  // Master client: points to master DB (with Tenant model)
-  const masterPrisma = new PrismaClient({
+  // For now, assume a single tenant schema per process and build URL
+  // from env/Secrets using restaurantId to pick credentials if needed.
+  const dbName = process.env.TENANT_DB_NAME || `tenant_${restaurantId}`;
+  const credentials = await loadDatabaseCredentials(dbName, restaurantId);
+  const tenantDatabaseUrl = buildConnectionString(credentials);
+
+  const tenantPrisma = new PrismaClient({
     datasources: {
       db: {
-        url: process.env.DATABASE_URL_MASTER,
+        url: tenantDatabaseUrl,
       },
     },
   });
 
-  try {
-    // Look up tenant in master DB
-    const tenantInfo = await masterPrisma.tenant.findUnique({
-      where: { id: restaurantId }, // or { restaurantId } if that’s your key
-      select: {
-        id: true,
-        name: true,
-        dbName: true,
-        dbUser: true,
-        dbPassword: true,
-      },
-    });
+  // Test connection
+  await tenantPrisma.$queryRaw`SELECT 1`;
 
-    await masterPrisma.$disconnect();
+  console.log(
+    `[getPrismClientForRestaurant] Successfully connected to tenant database: ${dbName}`
+  );
 
-    if (!tenantInfo) {
-      throw new Error(`Tenant ${restaurantId} not found in master database`);
-    }
-
-    console.log(
-      `[getPrismClientForRestaurant] Got tenant info:`,
-      tenantInfo
-    );
-
-    // Build DB name
-    const dbName = tenantInfo.dbName || `tenant_${restaurantId}`;
-
-    console.log(`[getPrismClientForRestaurant] Loading database credentials`);
-
-    const credentials = await loadDatabaseCredentials(dbName, restaurantId);
-    const tenantDatabaseUrl = buildConnectionString(credentials);
-
-    const tenantPrisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: tenantDatabaseUrl,
-        },
-      },
-    });
-
-    // Test connection
-    await tenantPrisma.$queryRaw`SELECT 1`;
-    console.log(
-      `[getPrismClientForRestaurant] Successfully connected to tenant database: ${dbName}`
-    );
-
-    prismClientCache.set(restaurantId, tenantPrisma);
-
-    return tenantPrisma;
-  } catch (error) {
-    console.error(
-      `[getPrismClientForRestaurant] Error connecting to tenant database:`,
-      error
-    );
-    await masterPrisma.$disconnect();
-    throw error;
-  }
+  prismClientCache.set(restaurantId, tenantPrisma);
+  return tenantPrisma;
 }
 
 async function loadDatabaseCredentials(
   dbName: string,
   restaurantId: string
 ): Promise<DatabaseCredentials> {
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   if (isDevelopment) {
     console.log(
@@ -115,21 +74,25 @@ async function loadDatabaseCredentials(
       console.log(
         `[loadDatabaseCredentials] Using restaurant-specific credentials for ${restaurantId}`
       );
+
       return {
         host: process.env[hostKey]!,
-        port: parseInt(process.env[portKey] || "5432"),
+        port: parseInt(process.env[portKey] || '5432', 10),
         username: process.env[userKey]!,
         password: process.env[passwordKey]!,
         database: dbName,
       };
     }
 
-    console.log(`[loadDatabaseCredentials] Using generic tenant credentials`);
+    console.log(
+      `[loadDatabaseCredentials] Using generic tenant credentials from env`
+    );
+
     return {
-      host: process.env.TENANT_DB_HOST || "localhost",
-      port: parseInt(process.env.TENANT_DB_PORT || "5432"),
-      username: process.env.TENANT_DB_USER || "postgres",
-      password: process.env.TENANT_DB_PASSWORD || "",
+      host: process.env.TENANT_DB_HOST || 'localhost',
+      port: parseInt(process.env.TENANT_DB_PORT || '5432', 10),
+      username: process.env.TENANT_DB_USER || 'postgres',
+      password: process.env.TENANT_DB_PASSWORD || '',
       database: dbName,
     };
   }
@@ -137,9 +100,23 @@ async function loadDatabaseCredentials(
   console.log(
     `[loadDatabaseCredentials] Production mode - loading from AWS Secrets Manager`
   );
+
   try {
-    const credentials = await preloadSecrets(restaurantId);
-    return credentials;
+    // preloadSecrets takes a single key and returns a string value
+    const host = await preloadSecrets(`TENANT_DB_HOST_${restaurantId}`);
+    const portStr = await preloadSecrets(`TENANT_DB_PORT_${restaurantId}`);
+    const user = await preloadSecrets(`TENANT_DB_USER_${restaurantId}`);
+    const password = await preloadSecrets(
+      `TENANT_DB_PASSWORD_${restaurantId}`
+    );
+
+    return {
+      host,
+      port: parseInt(portStr || '5432', 10),
+      username: user,
+      password,
+      database: dbName,
+    };
   } catch (error) {
     console.error(
       `[loadDatabaseCredentials] Failed to load credentials from Secrets Manager`,

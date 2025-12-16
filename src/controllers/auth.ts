@@ -2,7 +2,7 @@
 
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { getPrismClientForRestaurant } from '../lib/getPrismClientForRestaurant';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
@@ -121,9 +121,11 @@ export async function login(req: Request, res: Response) {
       dashboardModules,
     };
 
-    const accessToken = jwt.sign(tokenPayload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
-    });
+    const accessToken = jwt.sign(
+      tokenPayload,
+      JWT_SECRET as string,
+      { expiresIn: JWT_EXPIRES_IN as string } as SignOptions
+    );
 
     console.info('[Login] Staff authenticated', {
       staffId: staff.id,

@@ -1,99 +1,63 @@
-// import { Request, Response, NextFunction } from 'express';
-// // --- FIX: Use a direct relative path to the generated master client ---
-// import { PrismaClient as MasterPrismaClient } from '../generated/master';
-// import { getTenantPrismaClient } from '../utils/dbManager';
+import { getPrismClientForRestaurant } from "../lib/getPrismClientForRestaurant";
 
-// const masterPrisma = new MasterPrismaClient();
+// Store tenant-specific Prisma clients
+const tenantClients: Map<string, any> = new Map();
 
-// export async function tenantPrisma(req: Request, res: Response, next: NextFunction) {
-//   const headerRestaurantId = req.headers['x-restaurant-id'] as string | undefined;
-//   const bodyRestaurantId = (req.body && typeof req.body === 'object') ? (req.body as Record<string, any>).restaurantId : undefined;
-//   const restaurantId = headerRestaurantId || bodyRestaurantId || (req as any).restaurantId;
-
-//   // Public routes like /signup don't need this middleware's logic.
-//   // They will be handled before this middleware is even called.
-//   // For /login, we need the restaurantId to connect to the right DB.
-//   if (!restaurantId) {
-//     // Allow login path to proceed to its controller, which will show a more specific error.
-//     if (req.path === '/login') {
-//         return next();
-//     }
-//     return res.status(400).json({ message: 'Restaurant ID is required in the X-Restaurant-Id header.' });
-//   }
-
-//   try {
-//     const tenant = await masterPrisma.tenant.findUnique({
-//       where: { restaurantId },
-//     });
-
-//     if (!tenant) {
-//       return res.status(404).json({ message: 'Restaurant not found.' });
-//     }
-
-//     const tenantPrismaClient = getTenantPrismaClient(tenant.dbName);
-//     (req as any).prisma = tenantPrismaClient;
-//     (req as any).tenant = tenant; // Attach tenant info for use in controllers (e.g., login JWT)
-//     (req as any).useRedis = Boolean(tenant.useRedis);
-//     next();
-//   } catch (error) {
-//     console.error('Error connecting to tenant database:', error);
-//     return res.status(500).json({ message: 'Internal server error during DB connection.' });
-//   }
-// }
-
-
-
-
-import { Request, Response, NextFunction } from "express";
-
-import axios from 'axios';
-import { getTenantPrismaClientWithParams } from "../utils/dbManager";
-import { preloadSecrets } from "../utils/awsSecrets";
-
-
-
-export async function tenantPrisma(req: Request, res: Response, next: NextFunction) {
-  const headerId = req.headers["x-restaurant-id"] as string;
-  const bodyId = (req.body as any)?.restaurantId;
-  const restaurantId = headerId || bodyId;
+export const tenantPrismaMiddleware = (
+  req: any,
+  res: any,
+  next: () => void
+) => {
+  // Extract restaurantId from request
+  const restaurantId = req.body?.restaurantId || req.query?.restaurantId;
 
   if (!restaurantId) {
-    if (req.path === "/login") return next();
-    return res.status(400).json({ message: "Restaurant ID missing" });
+    return res.status(400).json({ error: "restaurantId is required" });
   }
 
-  try {
-    // Use admin backend API to fetch tenant info
-    let tenant = null;
+  // Store restaurantId in request for use in route handlers
+  req.restaurantId = restaurantId;
+
+  // Get or create Prisma client for this tenant
+  (async () => {
     try {
-      const resTenant = await axios.get(`https://admin.easytomanage.xyz/api/tenants/${restaurantId}`);
-      tenant = resTenant.data;
-    } catch (err) {
-      // If not found, tenant remains null
+      const prismaClient = await getPrismClientForRestaurant(restaurantId);
+      req.prisma = prismaClient;
+      next();
+    } catch (error) {
+      console.error(
+        `[tenantPrismaMiddleware] Error getting Prisma client for restaurant ${restaurantId}:`,
+        error
+      );
+      return res.status(500).json({
+        error: "Failed to connect to tenant database",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
     }
-    if (!tenant) return res.status(404).json({ message: "Tenant not found" });
+  })();
+};
 
-    const secrets = await preloadSecrets([
-      "/eatwithme/db-user",
-      "/eatwithme/db-password",
-      "/eatwithme/db-host",
-      "/eatwithme/db-port"
-    ]);
-
-    const prisma = getTenantPrismaClientWithParams(
-      tenant.dbName,
-      secrets["/eatwithme/db-user"],
-      secrets["/eatwithme/db-password"],
-      secrets["/eatwithme/db-host"],
-      secrets["/eatwithme/db-port"]
+/**
+ * Get Prisma client from request object (use in route handlers)
+ * Example: const prisma = getTenantPrisma(req);
+ */
+export const getTenantPrisma = (req: any) => {
+  if (!req.prisma) {
+    throw new Error(
+      "Prisma client not available. Make sure tenantPrismaMiddleware is applied."
     );
-
-    (req as any).prisma = prisma;
-    (req as any).tenant = tenant;
-
-    next();
-  } catch (err) {
-    console.error("Tenant DB error:", err);
-    return res.status(500).json({ message: "Tenant DB connection error" });
   }
-}
+  return req.prisma;
+};
+
+/**
+ * Get restaurantId from request object
+ */
+export const getRestaurantId = (req: any) => {
+  if (!req.restaurantId) {
+    throw new Error(
+      "restaurantId not found. Make sure tenantPrismaMiddleware is applied."
+    );
+  }
+  return req.restaurantId;
+};
