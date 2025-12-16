@@ -45,7 +45,7 @@ import { tenantPrismaMiddleware } from './middleware/tenantPrisma';
 // 	// --- Protected Routes ---
 // 	// All routes below this point require a tenant context and a valid authentication token.
 // 	app.use('/api', authenticateToken);
-// 	app.use('/api', tenantPrismaMiddleware);
+// 	app.use('/api', );
 
 // 	// Wire up all your API routes to the /api base path
 // 	app.use('/api/staff', staffRoutes);
@@ -75,7 +75,7 @@ import { tenantPrismaMiddleware } from './middleware/tenantPrisma';
 // import express from 'express';
 // import cors from 'cors';
 
-// import { tenantPrismaMiddleware } from './middleware/tenantPrismaMiddleware';
+// import {  } from './middleware/';
 // import { authenticateToken } from './middleware/auth';
 
 // // Routes
@@ -214,7 +214,6 @@ import { tenantPrismaMiddleware } from './middleware/tenantPrisma';
 
 import express from 'express';
 import cors from 'cors';
-import { tenantPrismaMiddleware } from './middleware/tenantPrismaMiddleware';
 import { authenticateToken } from './middleware/auth';
 
 // Routes
