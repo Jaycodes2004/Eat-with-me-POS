@@ -5,8 +5,7 @@
 // import express from 'express';
 
 // import cors from 'cors';
-// import { tenantPrismaMiddleware } from './middleware/tenantPrismaMiddleware';
-// import { authenticateToken } from './middleware/auth';
+import { tenantPrismaMiddleware } from './middleware/tenantPrisma';// import { authenticateToken } from './middleware/auth';
 
 // // --- FIX: Use the correct import style for each specific route ---
 // import { authRoutes } from './routes/auth';
