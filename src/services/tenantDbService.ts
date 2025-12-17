@@ -102,19 +102,18 @@ if (!MASTER_DB_USER || !MASTER_DB_PASS || !MASTER_DB_HOST) {
 }
 
 function createMasterClient() {
-	const url = `postgresql://${encodeURIComponent(
-		MASTER_DB_USER as string
-	)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${
-		MASTER_DB_HOST as string
-	}:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
+  const url = `postgresql://${encodeURIComponent(
+    MASTER_DB_USER as string
+  )}:${encodeURIComponent(MASTER_DB_PASS as string)}@${
+    MASTER_DB_HOST as string
+  }:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
 
-	return new Client({
-		connectionString:
-			url + (url.includes('?') ? '&sslmode=require' : '?sslmode=require'),
-		ssl: {
-			rejectUnauthorized: false, // accept self-signed / RDS cert
-		},
-	});
+  return new Client({
+    connectionString: url + (url.includes('?') ? '&sslmode=require' : '?sslmode=require'),
+    ssl: {
+      rejectUnauthorized: false, // MUST be here
+    },
+  });
 }
 
 export async function withMasterClient<T>(
@@ -149,15 +148,16 @@ export async function createTenantUserAndDatabase(opts: {
 
 		// 3) Connect to the new tenant DB as master and grant privileges
 		const tenantClient = new Client({
-			connectionString: `postgresql://${encodeURIComponent(
-				MASTER_DB_USER as string
-			)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${
-				MASTER_DB_HOST as string
-			}:${MASTER_DB_PORT}/${dbName}?sslmode=require`,
-			ssl: {
-				rejectUnauthorized: false, // same relaxation here
-			},
-		});
+  connectionString: `postgresql://${encodeURIComponent(
+    MASTER_DB_USER as string
+  )}:${encodeURIComponent(MASTER_DB_PASS as string)}@${
+    MASTER_DB_HOST as string
+  }:${MASTER_DB_PORT}/${dbName}?sslmode=require`,
+  ssl: {
+    rejectUnauthorized: false, // MUST be here too
+  },
+});
+
 
 		await tenantClient.connect();
 		try {
