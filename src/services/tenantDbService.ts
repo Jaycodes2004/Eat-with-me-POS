@@ -25,7 +25,9 @@ function createMasterClient() {
 	const url = `${baseUrl}?sslmode=no-verify`;
 
 	return new Client({
-		connectionString: url,
+		connectionString:
+			url + (url.includes('?') ? '&sslmode=no-verify' : '?sslmode=no-verify'),
+
 		ssl: {
 			rejectUnauthorized: false,
 		},
