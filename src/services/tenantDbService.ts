@@ -29,7 +29,7 @@
 // 	});
 // }
 
-// export async function withMasterClient<T>(
+// export export async function withMasterClient<T>(
 // 	fn: (client: Client) => Promise<T>
 // ): Promise<T> {
 // 	const client = createMasterClient();
@@ -116,7 +116,7 @@ function createMasterClient() {
   });
 }
 
-async function withMasterClient<T>(
+export async function withMasterClient<T>(
   fn: (client: Client) => Promise<T>
 ): Promise<T> {
   const client = createMasterClient();
