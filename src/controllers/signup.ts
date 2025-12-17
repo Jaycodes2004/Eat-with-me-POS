@@ -6,6 +6,8 @@
 // import { createTenantDatabaseAndUser, getTenantPrismaClientWithParams, runMigrationsForTenant, dropTenantDatabaseAndUser } from '../utils/dbManager';
 // import { preloadSecrets } from '../utils/awsSecrets';
 // import bcrypt from 'bcryptjs';
+import { withMasterClient } from '../services/tenantDbService';
+import { Client } from 'pg';
 
 // async function generateUniqueRestaurantId(): Promise<string> {
 //   let isUnique = false;
@@ -476,7 +478,7 @@ export async function signup(req: Request, res: Response) {
   // After migrations complete, grant permissions to tenant user
   console.info('[Signup] Granting permissions to tenant user', { restaurantId, dbName, dbUser });
 
-  await withMasterClient(async (client) => {
+  await withMasterClient(async (client: Client) => {
     try {
       // Grant database-level privileges
       await client.query(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${dbUser}`);
