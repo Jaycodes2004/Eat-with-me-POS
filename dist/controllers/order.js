@@ -100,14 +100,20 @@ async function getAllOrders(req, res) {
     }
 }
 async function createOrder(req, res) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
+    console.info('➡️ createOrder called', {
+        body: req.body,
+        tenant: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.id,
+    });
     const prisma = req.prisma;
     try {
         const tenant = req.tenant;
         const useRedis = req.useRedis;
-        const _e = req.body, { items, customerId, tableId, waiterId, orderTime } = _e, orderData = __rest(_e, ["items", "customerId", "tableId", "waiterId", "orderTime"]);
+        const _f = req.body, { items, customerId, tableId, waiterId, orderTime } = _f, orderData = __rest(_f, ["items", "customerId", "tableId", "waiterId", "orderTime"]);
         if (!items || items.length === 0) {
-            return res.status(400).json({ error: 'Order must contain at least one item.' });
+            return res
+                .status(400)
+                .json({ error: 'Order must contain at least one item.' });
         }
         const normalizedItems = items.map((item) => ({
             menuItemId: item.menuItemId || null,
@@ -119,10 +125,10 @@ async function createOrder(req, res) {
             modifiers: item.modifiers || [],
         }));
         const subtotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const totalAmount = (_a = orderData.totalAmount) !== null && _a !== void 0 ? _a : subtotal;
-        const taxAmount = (_b = orderData.taxAmount) !== null && _b !== void 0 ? _b : 0;
-        const discount = (_c = orderData.discount) !== null && _c !== void 0 ? _c : 0;
-        const tipAmount = (_d = orderData.tipAmount) !== null && _d !== void 0 ? _d : 0;
+        const totalAmount = (_b = orderData.totalAmount) !== null && _b !== void 0 ? _b : subtotal;
+        const taxAmount = (_c = orderData.taxAmount) !== null && _c !== void 0 ? _c : 0;
+        const discount = (_d = orderData.discount) !== null && _d !== void 0 ? _d : 0;
+        const tipAmount = (_e = orderData.tipAmount) !== null && _e !== void 0 ? _e : 0;
         const newOrder = await prisma.order.create({
             data: {
                 orderNumber: orderData.orderNumber || generateOrderNumber(),
@@ -164,7 +170,8 @@ async function createOrder(req, res) {
                 where: { id: tableId },
                 data: {
                     status: 'OCCUPIED',
-                    guests: orderData.guests || normalizedItems.reduce((sum, item) => sum + item.quantity, 0),
+                    guests: orderData.guests ||
+                        normalizedItems.reduce((sum, item) => sum + item.quantity, 0),
                     currentOrderId: newOrder.id,
                     lastOrderAt: new Date(),
                 },
@@ -210,12 +217,18 @@ async function getOrderById(req, res) {
     }
 }
 async function updateOrder(req, res) {
+    var _a;
+    console.info('➡️ updateOrder called', {
+        params: req.params,
+        body: req.body,
+        tenant: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.id,
+    });
     const prisma = req.prisma;
     const { id } = req.params;
     try {
         const tenant = req.tenant;
         const useRedis = req.useRedis;
-        const _a = req.body, { status, tableId, items, waiterId, customerId } = _a, updateData = __rest(_a, ["status", "tableId", "items", "waiterId", "customerId"]);
+        const _b = req.body, { status, tableId, items, waiterId, customerId } = _b, updateData = __rest(_b, ["status", "tableId", "items", "waiterId", "customerId"]);
         const data = Object.assign({}, updateData);
         if (status) {
             data.status = toUpper(status, 'NEW');
@@ -224,13 +237,19 @@ async function updateOrder(req, res) {
             }
         }
         if (tableId !== undefined) {
-            data.table = tableId ? { connect: { id: tableId } } : { disconnect: true };
+            data.table = tableId
+                ? { connect: { id: tableId } }
+                : { disconnect: true };
         }
         if (waiterId !== undefined) {
-            data.waiter = waiterId ? { connect: { id: waiterId } } : { disconnect: true };
+            data.waiter = waiterId
+                ? { connect: { id: waiterId } }
+                : { disconnect: true };
         }
         if (customerId !== undefined) {
-            data.customer = customerId ? { connect: { id: customerId } } : { disconnect: true };
+            data.customer = customerId
+                ? { connect: { id: customerId } }
+                : { disconnect: true };
         }
         if (items && Array.isArray(items)) {
             const normalizedItems = items.map((item) => ({
@@ -273,6 +292,11 @@ async function updateOrder(req, res) {
     }
 }
 async function deleteOrder(req, res) {
+    var _a;
+    console.info('➡️ deleteOrder called', {
+        params: req.params,
+        tenant: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.id,
+    });
     const prisma = req.prisma;
     const { id } = req.params;
     try {
@@ -312,9 +336,19 @@ async function searchOrders(req, res) {
                     q
                         ? {
                             OR: [
-                                { orderNumber: { contains: q, mode: 'insensitive' } },
-                                { customer: { name: { contains: q, mode: 'insensitive' } } },
-                                { table: { name: { contains: q, mode: 'insensitive' } } },
+                                {
+                                    orderNumber: { contains: q, mode: 'insensitive' },
+                                },
+                                {
+                                    customer: {
+                                        name: { contains: q, mode: 'insensitive' },
+                                    },
+                                },
+                                {
+                                    table: {
+                                        name: { contains: q, mode: 'insensitive' },
+                                    },
+                                },
                             ],
                         }
                         : {},

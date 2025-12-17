@@ -152,20 +152,40 @@ async function getStaffById(req, res) {
     }
 }
 async function createStaff(req, res) {
+    var _a;
     const prisma = req.prisma;
     if (!prisma) {
         return res.status(500).json({ error: 'Tenant database not available' });
     }
+    const tenantId = (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId;
     try {
-        let _a = req.body, { roleId, roleName, password, permissions = [], dashboardModules = [], joinDate, salary } = _a, staffData = __rest(_a, ["roleId", "roleName", "password", "permissions", "dashboardModules", "joinDate", "salary"]);
+        let _b = req.body, { roleId, roleName, password, permissions = [], dashboardModules = [], joinDate, salary } = _b, staffData = __rest(_b, ["roleId", "roleName", "password", "permissions", "dashboardModules", "joinDate", "salary"]);
+        console.info('[Staff] Create request received', {
+            tenantId,
+            roleIdProvided: Boolean(roleId),
+            roleName: roleName !== null && roleName !== void 0 ? roleName : null,
+            permissionsCount: Array.isArray(permissions) ? permissions.length : 0,
+            dashboardModulesCount: Array.isArray(dashboardModules) ? dashboardModules.length : 0,
+            joinDateProvided: Boolean(joinDate),
+        });
         if (!roleId && roleName) {
             const role = await prisma.role.findUnique({ where: { name: roleName } });
+            console.info('[StaffRoles] Lookup by name', {
+                tenantId,
+                roleName,
+                found: Boolean(role),
+            });
             if (!role) {
+                console.warn('[StaffRoles] Role missing during staff create', {
+                    tenantId,
+                    roleName,
+                });
                 return res.status(400).json({ message: `Role '${roleName}' does not exist.` });
             }
             roleId = role.id;
         }
         if (!roleId) {
+            console.warn('[Staff] Create missing role identifier', { tenantId, roleName: roleName !== null && roleName !== void 0 ? roleName : null });
             return res.status(400).json({ message: 'roleId or roleName is required.' });
         }
         if (!password && staffData.pin) {
@@ -180,10 +200,15 @@ async function createStaff(req, res) {
                 dashboardModules, joinDate: joinDate ? new Date(joinDate) : undefined, role: { connect: { id: roleId } } }),
             include: { role: true, salaryPayments: true, shiftLogs: true },
         });
+        console.info('[Staff] Create success', {
+            tenantId,
+            staffId: newStaff.id,
+            roleId: newStaff.roleId,
+        });
         res.status(201).json(mapStaffRecord(newStaff));
     }
     catch (err) {
-        console.error('Create staff error:', err);
+        console.error('[Staff] Create error', { tenantId }, err);
         res.status(500).json({ error: 'Internal server error' });
     }
 }
@@ -279,14 +304,18 @@ async function searchStaff(req, res) {
     }
 }
 async function getStaffRoles(req, res) {
+    var _a;
     const prisma = req.prisma;
     if (!prisma) {
         return res.status(500).json({ error: 'Tenant database not available' });
     }
+    const tenantId = (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId;
     try {
+        console.info('[StaffRoles] Fetch request received', { tenantId });
         const roles = await prisma.role.findMany({
             orderBy: { name: 'asc' },
         });
+        console.info('[StaffRoles] Fetch success', { tenantId, count: roles.length });
         res.json(roles.map((role) => ({
             id: role.id,
             name: role.name,
@@ -295,7 +324,7 @@ async function getStaffRoles(req, res) {
         })));
     }
     catch (err) {
-        console.error('Get staff roles error:', err);
+        console.error('[StaffRoles] Fetch error', { tenantId }, err);
         res.status(500).json({ error: 'Internal server error' });
     }
 }

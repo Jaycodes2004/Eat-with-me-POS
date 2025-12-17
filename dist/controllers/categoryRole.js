@@ -75,17 +75,39 @@ async function createCategory(req, res) {
     const prisma = req.prisma;
     const tenantId = (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId;
     try {
-        const { name, description, color, type } = req.body;
-        if (!name || !color || !type) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        const { name, description, color, type, isActive } = req.body;
+        const trimmedName = typeof name === 'string' ? name.trim() : '';
+        const rawType = typeof type === 'string' ? type.trim().toLowerCase() : '';
+        const allowedTypes = new Set(['menu', 'expense', 'inventory', 'supplier']);
+        if (!trimmedName) {
+            console.warn('[Categories] Create missing name', { tenantId, providedName: name });
+            return res.status(400).json({ error: 'Category name is required' });
+        }
+        if (!rawType || !allowedTypes.has(rawType)) {
+            console.warn('[Categories] Create invalid type', { tenantId, providedType: type });
+            return res.status(400).json({ error: 'Category type is invalid' });
+        }
+        const normalizedColor = typeof color === 'string' && color.trim().length > 0
+            ? color.trim()
+            : undefined;
+        const data = {
+            name: trimmedName,
+            type: rawType,
+            isActive: typeof isActive === 'boolean' ? isActive : true,
+        };
+        if (description !== undefined) {
+            data.description = description;
+        }
+        if (normalizedColor) {
+            data.color = normalizedColor;
         }
         console.info('[Categories] Create request received', {
             tenantId,
-            name,
-            type,
+            name: trimmedName,
+            type: rawType,
         });
         const cat = await prisma.category.create({
-            data: { name, description, color, type, isActive: true }
+            data,
         });
         console.info('[Categories] Create success', {
             tenantId,

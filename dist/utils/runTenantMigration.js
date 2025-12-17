@@ -1,28 +1,17 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const child_process_1 = require("child_process");
-/**
- * This script is executed as a separate process to avoid file-locking issues on Windows.
- * It receives the tenant's database URL via an environment variable and runs 'prisma db push'.
- */
+const { execSync } = require("child_process");
 function runMigration() {
-    const tenantDbUrl = process.env.DATABASE_URL_TENANT;
-    if (!tenantDbUrl) {
-        console.error('[Migration Script] Error: DATABASE_URL_TENANT environment variable not provided.');
+    const url = process.env.DATABASE_URL_TENANT;
+    if (!url) {
+        console.error("[runTenantMigration] Missing DATABASE_URL_TENANT");
         process.exit(1);
     }
-    console.log(`[Migration Script] Starting 'prisma db push' for database...`);
-    try {
-        // Execute the prisma command. It will use the DATABASE_URL_TENANT from the environment.
-        (0, child_process_1.execSync)(`npx prisma db push --schema=./prisma/schema.prisma --force-reset`, {
-            stdio: 'inherit', // Show the output of the command in your server's console
-        });
-        console.log(`[Migration Script] Successfully applied schema to the new tenant database.`);
-    }
-    catch (error) {
-        console.error(`[Migration Script] Failed to apply schema:`, error);
-        process.exit(1); // Exit with an error code
-    }
+    console.log("[runTenantMigration] Running migration:", url);
+    execSync(`npx prisma migrate deploy --schema=/home/ubuntu/Eat-with-me-POS/prisma/tenant/schema.prisma`, {
+        stdio: "inherit",
+        env: Object.assign(Object.assign({}, process.env), { DATABASE_URL: url, DATABASE_URL_TENANT: url })
+    });
+    console.log("[runTenantMigration] Migration completed");
 }
 runMigration();
 //# sourceMappingURL=runTenantMigration.js.map

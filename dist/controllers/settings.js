@@ -1,68 +1,109 @@
 "use strict";
+// import { Request, Response } from 'express';
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSettings = getSettings;
 exports.updateSettings = updateSettings;
+const tenantPrisma_1 = require("../middleware/tenantPrisma");
 async function getSettings(req, res) {
-    var _a;
-    const prisma = req.prisma;
-    const tenantId = (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId;
-    if (!prisma) {
-        console.error('[Settings] Missing tenant prisma client', { tenantId });
-        return res.status(500).json({ error: 'Tenant database not available' });
-    }
     try {
-        console.info('[Settings] Fetch request received', { tenantId });
+        const prisma = (0, tenantPrisma_1.getTenantPrisma)(req);
         const restaurant = await prisma.restaurant.findFirst();
-        if (restaurant) {
-            console.info('[Settings] Fetch success', { tenantId, id: restaurant.id });
-            res.json(restaurant);
+        if (!restaurant) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurant not found',
+            });
         }
-        else {
-            console.warn('[Settings] Fetch found no record', { tenantId });
-            res.status(404).json({ error: 'Restaurant settings not found' });
-        }
+        return res.json({
+            success: true,
+            data: {
+                restaurantName: restaurant.name,
+                country: restaurant.country,
+                currency: restaurant.currency,
+                currencySymbol: restaurant.currencySymbol,
+                businessAddress: restaurant.address,
+                businessPhone: restaurant.phone,
+                businessEmail: restaurant.email,
+                whatsappApiKey: restaurant.whatsappApiKey,
+                whatsappPhoneNumber: restaurant.whatsappPhoneNumber,
+                notifications: restaurant.notifications,
+                autoBackup: restaurant.autoBackup,
+                theme: restaurant.theme,
+                // Plan linkage for permissions
+                planId: restaurant.planId || null,
+            },
+        });
     }
     catch (error) {
-        console.error('[Settings] Fetch failed', {
-            tenantId,
-            message: error === null || error === void 0 ? void 0 : error.message,
-            stack: error === null || error === void 0 ? void 0 : error.stack,
+        console.error('[Settings] getSettings error', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to load settings',
+            error: error.message,
         });
-        res.status(500).json({ error: 'Failed to fetch settings' });
     }
 }
 async function updateSettings(req, res) {
-    var _a, _b;
-    const prisma = req.prisma;
-    const tenantId = (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId;
-    if (!prisma) {
-        console.error('[Settings] Missing tenant prisma client', { tenantId });
-        return res.status(500).json({ error: 'Tenant database not available' });
-    }
     try {
-        console.info('[Settings] Update request received', {
-            tenantId,
-            fields: Object.keys((_b = req.body) !== null && _b !== void 0 ? _b : {}),
-        });
-        const firstRestaurant = await prisma.restaurant.findFirst();
-        if (!firstRestaurant) {
-            console.warn('[Settings] Update attempted with no existing record', { tenantId });
-            return res.status(404).json({ error: 'Restaurant settings not found to update' });
+        const prisma = (0, tenantPrisma_1.getTenantPrisma)(req);
+        const { restaurantName, country, currency, currencySymbol, businessAddress, businessPhone, businessEmail, whatsappApiKey, whatsappPhoneNumber, notifications, autoBackup, theme,
+        // planId intentionally not updatable from here for now
+         } = req.body;
+        const restaurant = await prisma.restaurant.findFirst();
+        if (!restaurant) {
+            return res.status(404).json({
+                success: false,
+                message: 'Restaurant not found',
+            });
         }
-        const updatedSettings = await prisma.restaurant.update({
-            where: { id: firstRestaurant.id },
-            data: req.body,
+        const updated = await prisma.restaurant.update({
+            where: { id: restaurant.id },
+            data: {
+                name: restaurantName !== null && restaurantName !== void 0 ? restaurantName : restaurant.name,
+                country: country !== null && country !== void 0 ? country : restaurant.country,
+                currency: currency !== null && currency !== void 0 ? currency : restaurant.currency,
+                currencySymbol: currencySymbol !== null && currencySymbol !== void 0 ? currencySymbol : restaurant.currencySymbol,
+                address: businessAddress !== null && businessAddress !== void 0 ? businessAddress : restaurant.address,
+                phone: businessPhone !== null && businessPhone !== void 0 ? businessPhone : restaurant.phone,
+                email: businessEmail !== null && businessEmail !== void 0 ? businessEmail : restaurant.email,
+                whatsappApiKey: whatsappApiKey !== null && whatsappApiKey !== void 0 ? whatsappApiKey : restaurant.whatsappApiKey,
+                whatsappPhoneNumber: whatsappPhoneNumber !== null && whatsappPhoneNumber !== void 0 ? whatsappPhoneNumber : restaurant.whatsappPhoneNumber,
+                notifications: typeof notifications === 'boolean'
+                    ? notifications
+                    : restaurant.notifications,
+                autoBackup: typeof autoBackup === 'boolean'
+                    ? autoBackup
+                    : restaurant.autoBackup,
+                theme: theme !== null && theme !== void 0 ? theme : restaurant.theme,
+            },
         });
-        console.info('[Settings] Update success', { tenantId, id: updatedSettings.id });
-        res.json(updatedSettings);
+        return res.json({
+            success: true,
+            message: 'Settings updated successfully',
+            data: {
+                restaurantName: updated.name,
+                country: updated.country,
+                currency: updated.currency,
+                currencySymbol: updated.currencySymbol,
+                businessAddress: updated.address,
+                businessPhone: updated.phone,
+                businessEmail: updated.email,
+                whatsappApiKey: updated.whatsappApiKey,
+                whatsappPhoneNumber: updated.whatsappPhoneNumber,
+                notifications: updated.notifications,
+                autoBackup: updated.autoBackup,
+                theme: updated.theme,
+                planId: updated.planId || null,
+            },
+        });
     }
     catch (error) {
-        console.error('[Settings] Update failed', {
-            tenantId,
-            message: error === null || error === void 0 ? void 0 : error.message,
-            stack: error === null || error === void 0 ? void 0 : error.stack,
+        console.error('[Settings] updateSettings error', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to update settings',
+            error: error.message,
         });
-        res.status(500).json({ error: 'Failed to update settings' });
     }
 }
 //# sourceMappingURL=settings.js.map
