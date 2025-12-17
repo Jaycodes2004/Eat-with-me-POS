@@ -53,10 +53,7 @@ export async function createTenantUserAndDatabase(opts: {
 
 	return withMasterClient(async (client) => {
 		// 1) Create tenant user
-		await client.query(`CREATE USER "$1" WITH PASSWORD $2`, [
-			dbUser,
-			dbPassword,
-		]);
+		await client.query(`CREATE USER ${dbUser} WITH PASSWORD $1`, [dbPassword]);
 
 		// 2) Create tenant database from template tenant_db_001, owned by master user
 		await client.query(
