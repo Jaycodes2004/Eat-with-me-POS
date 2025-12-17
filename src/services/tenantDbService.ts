@@ -16,21 +16,15 @@ if (!MASTER_DB_USER || !MASTER_DB_PASS || !MASTER_DB_HOST) {
 }
 
 function createMasterClient() {
-	const baseUrl = `postgresql://${encodeURIComponent(
-		MASTER_DB_USER as string
-	)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${
-		MASTER_DB_HOST as string
-	}:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
-
-	const url = `${baseUrl}?sslmode=no-verify`;
-
-	return new Client({
-		connectionString: url + '?sslmode=no-verify',
-		ssl: {
-			rejectUnauthorized: false,
-		},
-	});
+  const url = `postgresql://${encodeURIComponent(MASTER_DB_USER as string)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${MASTER_DB_HOST as string}:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
+  return new Client({
+    connectionString: url,  // ← NO query params
+    ssl: {
+      rejectUnauthorized: false,  // ← This handles self-signed certs
+    },
+  });
 }
+
 
 async function withMasterClient<T>(
 	fn: (client: Client) => Promise<T>
