@@ -108,17 +108,12 @@ function createMasterClient() {
 		MASTER_DB_HOST as string
 	}:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
 
-	// For RDS, force SSL
-	const isProduction = process.env.NODE_ENV === 'production';
-
 	return new Client({
 		connectionString:
 			url + (url.includes('?') ? '&sslmode=require' : '?sslmode=require'),
-		ssl: isProduction
-			? {
-					rejectUnauthorized: false, // or provide RDS CA and set true
-			  }
-			: false,
+		ssl: {
+			rejectUnauthorized: false, // accept self-signed / RDS cert
+		},
 	});
 }
 
@@ -162,10 +157,9 @@ export async function createTenantUserAndDatabase(opts: {
 			)}:${encodeURIComponent(MASTER_DB_PASS as string)}@${
 				MASTER_DB_HOST as string
 			}:${MASTER_DB_PORT}/${dbName}?sslmode=require`,
-			ssl:
-				process.env.NODE_ENV === 'production'
-					? { rejectUnauthorized: false }
-					: false,
+			ssl: {
+				rejectUnauthorized: false, // same relaxation here
+			},
 		});
 
 		await tenantClient.connect();
