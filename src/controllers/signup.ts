@@ -277,6 +277,7 @@ import {
 	runMigrationsForTenant,
 	dropTenantDatabaseAndUser,
 } from '../utils/dbManager';
+
 import { getParameter } from '../utils/awsSecrets';
 import bcrypt from 'bcryptjs';
 
