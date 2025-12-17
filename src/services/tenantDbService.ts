@@ -108,21 +108,15 @@ function createMasterClient() {
     MASTER_DB_HOST as string
   }:${MASTER_DB_PORT}/${MASTER_DB_NAME}`;
 
-  // For RDS, force SSL
   const isProduction = process.env.NODE_ENV === 'production';
 
   return new Client({
-    connectionString: url + (url.includes('?') ? '&sslmode=require' : '?sslmode=require'),
-    ssl: isProduction
-      ? {
-          rejectUnauthorized: false, // or provide RDS CA and set true
-        }
-      : false,
+    connectionString: url,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
   });
 }
 
-
-async function withMasterClient<T>(
+export async function withMasterClient<T>(
   fn: (client: Client) => Promise<T>
 ): Promise<T> {
   const client = createMasterClient();
