@@ -474,53 +474,6 @@ export async function signup(req: Request, res: Response) {
 			masterDbPort
 		);
 
-  // After migrations complete, grant permissions to tenant user
-  console.info('[Signup] Granting permissions to tenant user', { restaurantId, dbName, dbUser });
-
-  await withMasterClient(async (client: Client) => {
-    try {
-      // Grant database-level privileges
-      await client.query(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${dbUser}`);
-      
-      // Grant schema privileges
-      await client.query(`GRANT USAGE ON SCHEMA public TO ${dbUser}`);
-      
-      // Grant table privileges for existing tables
-      await client.query(
-        `GRANT INSERT, UPDATE, DELETE, SELECT ON ALL TABLES IN SCHEMA public TO ${dbUser}`
-      );
-      
-      // Grant sequence privileges for IDs and auto-increments
-      await client.query(
-        `GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO ${dbUser}`
-      );
-      
-      // Set default privileges for future tables
-      await client.query(`
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ${dbUser}
-      `);
-      
-      // Set default privileges for future sequences
-      await client.query(`
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO ${dbUser}
-      `);
-      
-      console.info('[Signup] Permissions granted successfully', { restaurantId });
-    } catch (grantErr: any) {
-      console.error('[Signup] Failed to grant permissions', {
-        restaurantId,
-        error: grantErr.message,
-      });
-      throw grantErr;
-    }
-  });
-
-		// 6. Connect to tenant DB
-		console.info('[Signup] Connecting to tenant DB', { restaurantId });
-		// const tenantPrisma = getTenantPrismaClientWithParams(
-		//   dbName,
 		//   masterDbUser,
 		//   masterDbPass,
 		//   masterDbHost,
