@@ -3,7 +3,11 @@ import { getPrismClientForRestaurant } from "../lib/getPrismClientForRestaurant"
 // Store tenant-specific Prisma clients
 const tenantClients: Map<string, any> = new Map();
 
-export const tenantPrismaMiddleware = (
+/**
+ * Middleware to attach tenant-specific Prisma client to request
+ * IMPORTANT: Must be declared as async function (not IIFE)
+ */
+export const tenantPrismaMiddleware = async (
   req: any,
   res: any,
   next: () => void
@@ -18,23 +22,24 @@ export const tenantPrismaMiddleware = (
   // Store restaurantId in request for use in route handlers
   req.restaurantId = restaurantId;
 
-  // Get or create Prisma client for this tenant
-  (async () => {
-    try {
-      const prismaClient = await getPrismClientForRestaurant(restaurantId);
-      req.prisma = prismaClient;
-      next();
-    } catch (error) {
-      console.error(
-        `[tenantPrismaMiddleware] Error getting Prisma client for restaurant ${restaurantId}:`,
-        error
-      );
-      return res.status(500).json({
-        error: "Failed to connect to tenant database",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  })();
+  try {
+    // Get or create Prisma client for this tenant
+    const prismaClient = await getPrismClientForRestaurant(restaurantId);
+    req.prisma = prismaClient;
+    
+    // Call next() to continue middleware chain
+    next();
+  } catch (error) {
+    console.error(
+      `[tenantPrismaMiddleware] Error getting Prisma client for restaurant ${restaurantId}:`,
+      error
+    );
+    
+    return res.status(500).json({
+      error: "Failed to connect to tenant database",
+      message: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
 };
 
 /**
