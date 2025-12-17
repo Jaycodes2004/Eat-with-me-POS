@@ -6,8 +6,6 @@
 // import { createTenantDatabaseAndUser, getTenantPrismaClientWithParams, runMigrationsForTenant, dropTenantDatabaseAndUser } from '../utils/dbManager';
 // import { preloadSecrets } from '../utils/awsSecrets';
 // import bcrypt from 'bcryptjs';
-import { withMasterClient } from '../services/tenantDbService';
-import { Client } from 'pg';
 
 // async function generateUniqueRestaurantId(): Promise<string> {
 //   let isUnique = false;
