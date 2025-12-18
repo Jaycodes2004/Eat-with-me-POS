@@ -10,7 +10,7 @@ export async function runTenantMigration(
   port: string
 ): Promise<void> {
   const encodedPassword = encodeURIComponent(password);
-  const url = `postgresql://${user}:${encodedPassword}@${host}:${port}/${dbName}?schema=public&sslmode=require`;
+  const url = `postgresql://${user}:${encodedPassword}@${host}:${port}/${dbName}?schema=public&sslmode=no-verify`;
 
   const client = new Client({
     connectionString: url,
