@@ -16,7 +16,7 @@ export async function runTenantMigration(
   try {
     console.log('[runTenantMigration] Executing Prisma migrations...');
 
-    const schemaPath = path.join(process.cwd(), 'prisma', 'tenant.schema.prisma');
+    const schemaPath = path.join(process.cwd(), 'prisma', 'tenant', 'schema.prisma');
 
     execSync(
       `npx prisma migrate deploy --schema=${schemaPath}`,
