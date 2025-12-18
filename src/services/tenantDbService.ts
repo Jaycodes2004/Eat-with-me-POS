@@ -111,6 +111,6 @@ export async function dropTenantDatabaseAndUser(opts: {
 		await client.query(`DROP DATABASE IF EXISTS "${dbName}"`);
 
 		// 3) Drop role
-		await client.query(`DROP ROLE IF EXISTS $1`, [dbUser]);
+		await client.query(`DROP ROLE IF EXISTS "${dbUser}"`);
 	});
 }
