@@ -53,7 +53,7 @@ export async function createTenantUserAndDatabase(opts: {
 
 		// 2) Create tenant database from template tenant_db_001, owned by master user
 		await client.query(
-			`CREATE DATABASE "${dbName}" OWNER "${MASTER_DB_USER}" TEMPLATE "tenant_db_001"`
+			`CREATE DATABASE "${dbName}" OWNER "${MASTER_DB_USER}" TEMPLATE "tenant_test_001"`
 		);
 
 		// 3) Connect to the new tenant DB as master and grant privileges
