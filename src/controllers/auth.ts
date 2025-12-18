@@ -184,7 +184,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getPrismClientForRestaurant } from '../lib/getPrismClientForRestaurant';
-import { getMasterPrisma } from '../lib/masterPrisma';
+import { PrismaClient } from '@prisma/client';
 
 export async function login(req: Request, res: Response) {
   const { email, password, restaurantId: bodyRestaurantId } = req.body;
@@ -229,52 +229,32 @@ export async function login(req: Request, res: Response) {
   }
 
   try {
-    console.info('[Login] Fetching tenant DB credentials from master DB', {
-      restaurantId,
-    });
-
-    // Step 1: Get DB credentials from master DB
-    const masterPrisma = getMasterPrisma();
-    const tenant = await masterPrisma.tenant.findUnique({
-      where: { restaurantId },
-      select: {
-        dbName: true,
-        dbUser: true,
-        dbPassword: true,
-      },
-    });
-
-    if (!tenant) {
-      console.warn('[Login] Tenant not found in master DB', { restaurantId });
-      return res.status(404).json({
-        message: 'Restaurant not found. Please check the restaurant ID.',
-      });
-    }
-
-    console.info('[Login] Tenant credentials retrieved from master DB', {
-      restaurantId,
-    });
-
-    // Step 2: Get tenant DB host and port (from env or constants)
-    const dbHost = process.env.TENANT_DB_HOST || 'localhost';
-    const dbPort = parseInt(process.env.TENANT_DB_PORT || '5432', 10);
-
     console.info('[Login] Creating Prisma client with direct credentials', {
       restaurantId,
-      dbName: tenant.dbName,
-      dbHost,
-      dbPort,
-      dbUser: tenant.dbUser,
     });
 
-    // Step 3: Pass credentials directly to getPrismClientForRestaurant
+    // Get tenant DB host and port (from env or constants)
+    const dbHost = process.env.TENANT_DB_HOST || 'localhost';
+    const dbPort = parseInt(process.env.TENANT_DB_PORT || '5432', 10);
+    const dbUser = process.env.TENANT_DB_USER || 'postgres';
+    const dbPassword = process.env.TENANT_DB_PASSWORD || '';
+    const dbName = `tenant_${restaurantId}`;
+
+    console.info('[Login] Using tenant DB credentials', {
+      restaurantId,
+      dbName,
+      dbHost,
+      dbPort,
+    });
+
+    // Pass credentials directly to getPrismClientForRestaurant
     const prisma = await getPrismClientForRestaurant(
       restaurantId,
       dbHost,
       dbPort,
-      tenant.dbUser,
-      tenant.dbPassword,
-      tenant.dbName
+      dbUser,
+      dbPassword,
+      dbName
     );
 
     console.info('[Login] Looking up staff by email', { email, restaurantId });
@@ -343,13 +323,13 @@ export async function login(req: Request, res: Response) {
       });
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
-  } catch (error) {
-    const errorMsg = (error as Error)?.message || 'Unknown error';
+  } catch (error: any) {
+    const errorMsg = error?.message || 'Unknown error';
     console.error('[Login] Error:', {
       email,
       restaurantId,
       error: errorMsg,
-      stack: (error as Error)?.stack,
+      stack: error?.stack,
     });
 
     // Handle specific error cases
