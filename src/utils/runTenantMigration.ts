@@ -1,24 +1,50 @@
-const { execSync } = require("child_process");
+import { Client } from 'pg';
+import * as fs from 'fs';
+import * as path from 'path';
 
-function runMigration() {
-  const url = process.env.DATABASE_URL_TENANT;
+export async function runTenantMigration(
+  dbName: string,
+  user: string,
+  password: string,
+  host: string,
+  port: string
+): Promise<void> {
+  const encodedPassword = encodeURIComponent(password);
+  const url = `postgresql://${user}:${encodedPassword}@${host}:${port}/${dbName}?schema=public&sslmode=require`;
 
-  if (!url) {
-    console.error("[runTenantMigration] Missing DATABASE_URL_TENANT");
-    process.exit(1);
-  }
+  const client = new Client({
+    connectionString: url,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
 
-  console.log("[runTenantMigration] Running migration:", url);
+  try {
+    await client.connect();
+    console.log('[runTenantMigration] Connected to tenant database:', dbName);
 
-  execSync(
-    `npx prisma migrate deploy --schema=/home/ubuntu/Eat-with-me-POS/prisma/tenant/schema.prisma`,
-    {
-      stdio: "inherit",
-      env: { ...process.env, DATABASE_URL: url, DATABASE_URL_TENANT: url }
+    // Read migration SQL file
+    const migrationPath = path.join(
+      process.cwd(),
+      'prisma/migrations/001_create_tenant_tables.sql'
+    );
+
+    if (!fs.existsSync(migrationPath)) {
+      throw new Error(`Migration file not found at: ${migrationPath}`);
     }
-  );
 
-  console.log("[runTenantMigration] Migration completed");
+    const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
+
+    console.log('[runTenantMigration] Executing migration SQL...');
+
+    // Execute migrations
+    await client.query(migrationSQL);
+
+    console.log('[runTenantMigration] Migration completed successfully for:', dbName);
+  } catch (error: any) {
+    console.error('[runTenantMigration] Migration failed:', error.message);
+    throw new Error(`Migration failed for ${dbName}: ${error.message}`);
+  } finally {
+    await client.end();
+  }
 }
-
-runMigration();
