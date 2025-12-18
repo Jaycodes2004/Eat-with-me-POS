@@ -1,5 +1,4 @@
-import { Client } from 'pg';
-import * as fs from 'fs';
+import { execSync } from 'child_process';
 import * as path from 'path';
 
 export async function runTenantMigration(
@@ -12,39 +11,27 @@ export async function runTenantMigration(
   const encodedPassword = encodeURIComponent(password);
   const url = `postgresql://${user}:${encodedPassword}@${host}:${port}/${dbName}?schema=public&sslmode=no-verify`;
 
-  const client = new Client({
-    connectionString: url,
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  });
+  console.log('[runTenantMigration] Setting up tenant database:', dbName);
 
   try {
-    await client.connect();
-    console.log('[runTenantMigration] Connected to tenant database:', dbName);
+    console.log('[runTenantMigration] Executing Prisma migrations...');
 
-    // Read migration SQL file
-    const migrationPath = path.join(
-      process.cwd(),
-      'prisma/migrations/001_create_tenant_tables.sql'
+    const schemaPath = path.join(process.cwd(), 'prisma', 'tenant.schema.prisma');
+
+    execSync(
+      `npx prisma migrate deploy --schema=${schemaPath}`,
+      {
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          DATABASE_URL: url,
+        },
+      }
     );
 
-    if (!fs.existsSync(migrationPath)) {
-      throw new Error(`Migration file not found at: ${migrationPath}`);
-    }
-
-    const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
-
-    console.log('[runTenantMigration] Executing migration SQL...');
-
-    // Execute migrations
-    await client.query(migrationSQL);
-
-    console.log('[runTenantMigration] Migration completed successfully for:', dbName);
+    console.log('[runTenantMigration] Prisma migrations completed successfully for:', dbName);
   } catch (error: any) {
     console.error('[runTenantMigration] Migration failed:', error.message);
-    throw new Error(`Migration failed for ${dbName}: ${error.message}`);
-  } finally {
-    await client.end();
+    throw new Error(`Prisma migration failed for ${dbName}: ${error.message}`);
   }
 }
