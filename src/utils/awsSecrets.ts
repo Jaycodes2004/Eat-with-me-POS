@@ -1,6 +1,6 @@
-
 import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+
 const ssm = new SSMClient({ region: "ap-south-1" });
 const secretsManager = new SecretsManagerClient({ region: "ap-south-1" });
 
@@ -29,4 +29,25 @@ export async function preloadSecrets(names: string[]) {
     result[name] = await getParameter(name);
   }
   return result;
+}
+
+/**
+ * Load tenant DB credentials from AWS SSM Parameter Store
+ */
+export async function loadTenantDbCredentials() {
+  console.log('[loadTenantDbCredentials] Fetching from AWS SSM Parameter Store');
+  
+  const [dbHost, dbPort, dbUser, dbPassword] = await Promise.all([
+    getParameter('/eatwithme/db-host'),
+    getParameter('/eatwithme/db-port'),
+    getParameter('/eatwithme/db-user'),
+    getParameter('/eatwithme/db-password'),
+  ]);
+
+  return {
+    dbHost,
+    dbPort: parseInt(dbPort, 10),
+    dbUser,
+    dbPassword,
+  };
 }

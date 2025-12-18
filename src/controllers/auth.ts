@@ -184,7 +184,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { getPrismClientForRestaurant } from '../lib/getPrismClientForRestaurant';
-import { PrismaClient } from '@prisma/client';
+import { loadTenantDbCredentials } from '../utils/awsSecrets';
 
 export async function login(req: Request, res: Response) {
   const { email, password, restaurantId: bodyRestaurantId } = req.body;
@@ -194,7 +194,8 @@ export async function login(req: Request, res: Response) {
   const restaurantId =
     typeof bodyRestaurantId === 'string' && bodyRestaurantId !== 'undefined'
       ? bodyRestaurantId
-      : typeof headerRestaurantId === 'string' && headerRestaurantId !== 'undefined'
+      : typeof headerRestaurantId === 'string' &&
+        headerRestaurantId !== 'undefined'
       ? headerRestaurantId
       : undefined;
 
@@ -229,22 +230,22 @@ export async function login(req: Request, res: Response) {
   }
 
   try {
-    console.info('[Login] Creating Prisma client with direct credentials', {
+    console.info('[Login] Loading DB credentials from AWS SSM', {
       restaurantId,
     });
 
-    // Get tenant DB host and port (from env or constants)
-    const dbHost = process.env.TENANT_DB_HOST || 'localhost';
-    const dbPort = parseInt(process.env.TENANT_DB_PORT || '5432', 10);
-    const dbUser = process.env.TENANT_DB_USER || 'postgres';
-    const dbPassword = process.env.TENANT_DB_PASSWORD || '';
+    // Load DB credentials from AWS SSM Parameter Store
+    const { dbHost, dbPort, dbUser, dbPassword } =
+      await loadTenantDbCredentials();
+
     const dbName = `tenant_${restaurantId}`;
 
-    console.info('[Login] Using tenant DB credentials', {
+    console.info('[Login] Loaded credentials from AWS SSM', {
       restaurantId,
       dbName,
       dbHost,
       dbPort,
+      dbUser,
     });
 
     // Pass credentials directly to getPrismClientForRestaurant
@@ -281,7 +282,8 @@ export async function login(req: Request, res: Response) {
       });
 
       const permissions: string[] =
-        Array.isArray(staffRecord.permissions) && staffRecord.permissions.length > 0
+        Array.isArray(staffRecord.permissions) &&
+        staffRecord.permissions.length > 0
           ? staffRecord.permissions
           : Array.isArray(roleRecord?.permissions)
           ? roleRecord.permissions
@@ -333,7 +335,10 @@ export async function login(req: Request, res: Response) {
     });
 
     // Handle specific error cases
-    if (errorMsg.includes('Tenant') && errorMsg.includes('not found')) {
+    if (
+      errorMsg.includes('Tenant') &&
+      errorMsg.includes('not found')
+    ) {
       return res.status(404).json({
         message: 'Restaurant not found.',
       });
@@ -342,6 +347,12 @@ export async function login(req: Request, res: Response) {
     if (errorMsg.includes('Failed to create Prisma client')) {
       return res.status(502).json({
         message: 'Unable to connect to restaurant database. Please try again.',
+      });
+    }
+
+    if (errorMsg.includes('Parameter') || errorMsg.includes('SecureString')) {
+      return res.status(500).json({
+        message: 'Internal server error: Failed to load database credentials.',
       });
     }
 

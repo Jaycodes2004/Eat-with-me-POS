@@ -69,6 +69,7 @@
 
 
 import { getPrismClientForRestaurant } from '../lib/getPrismClientForRestaurant';
+import { loadTenantDbCredentials } from '../utils/awsSecrets';
 
 // Store tenant-specific Prisma clients
 const tenantClients: Map<string, any> = new Map();
@@ -83,7 +84,10 @@ export const tenantPrismaMiddleware = async (
   next: () => void
 ) => {
   // Extract restaurantId from request
-  const restaurantId = req.body?.restaurantId || req.query?.restaurantId || req.headers?.['x-restaurant-id'];
+  const restaurantId =
+    req.body?.restaurantId ||
+    req.query?.restaurantId ||
+    req.headers?.['x-restaurant-id'];
 
   if (!restaurantId) {
     return res.status(400).json({ error: 'restaurantId is required' });
@@ -93,16 +97,17 @@ export const tenantPrismaMiddleware = async (
   req.restaurantId = restaurantId;
 
   try {
-    console.info('[tenantPrismaMiddleware] Getting Prisma client', { restaurantId });
+    console.info('[tenantPrismaMiddleware] Getting Prisma client', {
+      restaurantId,
+    });
 
-    // Get DB credentials from environment
-    const dbHost = process.env.TENANT_DB_HOST || 'localhost';
-    const dbPort = parseInt(process.env.TENANT_DB_PORT || '5432', 10);
-    const dbUser = process.env.TENANT_DB_USER || 'postgres';
-    const dbPassword = process.env.TENANT_DB_PASSWORD || '';
+    // Load DB credentials from AWS SSM Parameter Store
+    const { dbHost, dbPort, dbUser, dbPassword } =
+      await loadTenantDbCredentials();
+
     const dbName = `tenant_${restaurantId}`;
 
-    console.info('[tenantPrismaMiddleware] Using DB credentials', {
+    console.info('[tenantPrismaMiddleware] Loaded credentials from AWS SSM', {
       restaurantId,
       dbName,
       dbHost,
@@ -131,7 +136,7 @@ export const tenantPrismaMiddleware = async (
   } catch (error: any) {
     console.error(
       `[tenantPrismaMiddleware] Error getting Prisma client for restaurant ${restaurantId}:`,
-      error
+      error.message
     );
 
     return res.status(500).json({
