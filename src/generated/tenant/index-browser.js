@@ -158,7 +158,7 @@ exports.Prisma.RestaurantScalarFieldEnum = {
   currency: 'currency',
   country: 'country',
   language: 'language',
-  plan: 'plan',
+  planId: 'planId',
   theme: 'theme',
   notifications: 'notifications',
   autoBackup: 'autoBackup',

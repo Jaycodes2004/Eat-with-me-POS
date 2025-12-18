@@ -71,7 +71,7 @@ model Restaurant {
   currency            String?  @default("INR")
   country             String?
   language            String?  @default("English")
-  plan                String?
+  planId              String?
   theme               String?  @default("light")
   notifications       Boolean  @default(true)
   autoBackup          Boolean  @default(false)

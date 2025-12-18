@@ -97,7 +97,7 @@ export type RestaurantPayload<ExtArgs extends $Extensions.Args = $Extensions.Def
     currency: string | null
     country: string | null
     language: string | null
-    plan: string | null
+    planId: string | null
     theme: string | null
     notifications: boolean
     autoBackup: boolean
@@ -6086,7 +6086,7 @@ export namespace Prisma {
     currency: string | null
     country: string | null
     language: string | null
-    plan: string | null
+    planId: string | null
     theme: string | null
     notifications: boolean | null
     autoBackup: boolean | null
@@ -6109,7 +6109,7 @@ export namespace Prisma {
     currency: string | null
     country: string | null
     language: string | null
-    plan: string | null
+    planId: string | null
     theme: string | null
     notifications: boolean | null
     autoBackup: boolean | null
@@ -6132,7 +6132,7 @@ export namespace Prisma {
     currency: number
     country: number
     language: number
-    plan: number
+    planId: number
     theme: number
     notifications: number
     autoBackup: number
@@ -6158,7 +6158,7 @@ export namespace Prisma {
     currency?: true
     country?: true
     language?: true
-    plan?: true
+    planId?: true
     theme?: true
     notifications?: true
     autoBackup?: true
@@ -6181,7 +6181,7 @@ export namespace Prisma {
     currency?: true
     country?: true
     language?: true
-    plan?: true
+    planId?: true
     theme?: true
     notifications?: true
     autoBackup?: true
@@ -6204,7 +6204,7 @@ export namespace Prisma {
     currency?: true
     country?: true
     language?: true
-    plan?: true
+    planId?: true
     theme?: true
     notifications?: true
     autoBackup?: true
@@ -6302,7 +6302,7 @@ export namespace Prisma {
     currency: string | null
     country: string | null
     language: string | null
-    plan: string | null
+    planId: string | null
     theme: string | null
     notifications: boolean
     autoBackup: boolean
@@ -6343,7 +6343,7 @@ export namespace Prisma {
     currency?: boolean
     country?: boolean
     language?: boolean
-    plan?: boolean
+    planId?: boolean
     theme?: boolean
     notifications?: boolean
     autoBackup?: boolean
@@ -6367,7 +6367,7 @@ export namespace Prisma {
     currency?: boolean
     country?: boolean
     language?: boolean
-    plan?: boolean
+    planId?: boolean
     theme?: boolean
     notifications?: boolean
     autoBackup?: boolean
@@ -28606,7 +28606,7 @@ export namespace Prisma {
     currency: 'currency',
     country: 'country',
     language: 'language',
-    plan: 'plan',
+    planId: 'planId',
     theme: 'theme',
     notifications: 'notifications',
     autoBackup: 'autoBackup',
@@ -29259,7 +29259,7 @@ export namespace Prisma {
     currency?: StringNullableFilter | string | null
     country?: StringNullableFilter | string | null
     language?: StringNullableFilter | string | null
-    plan?: StringNullableFilter | string | null
+    planId?: StringNullableFilter | string | null
     theme?: StringNullableFilter | string | null
     notifications?: BoolFilter | boolean
     autoBackup?: BoolFilter | boolean
@@ -29283,7 +29283,7 @@ export namespace Prisma {
     currency?: SortOrderInput | SortOrder
     country?: SortOrderInput | SortOrder
     language?: SortOrderInput | SortOrder
-    plan?: SortOrderInput | SortOrder
+    planId?: SortOrderInput | SortOrder
     theme?: SortOrderInput | SortOrder
     notifications?: SortOrder
     autoBackup?: SortOrder
@@ -29311,7 +29311,7 @@ export namespace Prisma {
     currency?: SortOrderInput | SortOrder
     country?: SortOrderInput | SortOrder
     language?: SortOrderInput | SortOrder
-    plan?: SortOrderInput | SortOrder
+    planId?: SortOrderInput | SortOrder
     theme?: SortOrderInput | SortOrder
     notifications?: SortOrder
     autoBackup?: SortOrder
@@ -29341,7 +29341,7 @@ export namespace Prisma {
     currency?: StringNullableWithAggregatesFilter | string | null
     country?: StringNullableWithAggregatesFilter | string | null
     language?: StringNullableWithAggregatesFilter | string | null
-    plan?: StringNullableWithAggregatesFilter | string | null
+    planId?: StringNullableWithAggregatesFilter | string | null
     theme?: StringNullableWithAggregatesFilter | string | null
     notifications?: BoolWithAggregatesFilter | boolean
     autoBackup?: BoolWithAggregatesFilter | boolean
@@ -31237,7 +31237,7 @@ export namespace Prisma {
     currency?: string | null
     country?: string | null
     language?: string | null
-    plan?: string | null
+    planId?: string | null
     theme?: string | null
     notifications?: boolean
     autoBackup?: boolean
@@ -31261,7 +31261,7 @@ export namespace Prisma {
     currency?: string | null
     country?: string | null
     language?: string | null
-    plan?: string | null
+    planId?: string | null
     theme?: string | null
     notifications?: boolean
     autoBackup?: boolean
@@ -31285,7 +31285,7 @@ export namespace Prisma {
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     country?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: NullableStringFieldUpdateOperationsInput | string | null
+    planId?: NullableStringFieldUpdateOperationsInput | string | null
     theme?: NullableStringFieldUpdateOperationsInput | string | null
     notifications?: BoolFieldUpdateOperationsInput | boolean
     autoBackup?: BoolFieldUpdateOperationsInput | boolean
@@ -31309,7 +31309,7 @@ export namespace Prisma {
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     country?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: NullableStringFieldUpdateOperationsInput | string | null
+    planId?: NullableStringFieldUpdateOperationsInput | string | null
     theme?: NullableStringFieldUpdateOperationsInput | string | null
     notifications?: BoolFieldUpdateOperationsInput | boolean
     autoBackup?: BoolFieldUpdateOperationsInput | boolean
@@ -31333,7 +31333,7 @@ export namespace Prisma {
     currency?: string | null
     country?: string | null
     language?: string | null
-    plan?: string | null
+    planId?: string | null
     theme?: string | null
     notifications?: boolean
     autoBackup?: boolean
@@ -31357,7 +31357,7 @@ export namespace Prisma {
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     country?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: NullableStringFieldUpdateOperationsInput | string | null
+    planId?: NullableStringFieldUpdateOperationsInput | string | null
     theme?: NullableStringFieldUpdateOperationsInput | string | null
     notifications?: BoolFieldUpdateOperationsInput | boolean
     autoBackup?: BoolFieldUpdateOperationsInput | boolean
@@ -31381,7 +31381,7 @@ export namespace Prisma {
     currency?: NullableStringFieldUpdateOperationsInput | string | null
     country?: NullableStringFieldUpdateOperationsInput | string | null
     language?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: NullableStringFieldUpdateOperationsInput | string | null
+    planId?: NullableStringFieldUpdateOperationsInput | string | null
     theme?: NullableStringFieldUpdateOperationsInput | string | null
     notifications?: BoolFieldUpdateOperationsInput | boolean
     autoBackup?: BoolFieldUpdateOperationsInput | boolean
@@ -33949,7 +33949,7 @@ export namespace Prisma {
     currency?: SortOrder
     country?: SortOrder
     language?: SortOrder
-    plan?: SortOrder
+    planId?: SortOrder
     theme?: SortOrder
     notifications?: SortOrder
     autoBackup?: SortOrder
@@ -33973,7 +33973,7 @@ export namespace Prisma {
     currency?: SortOrder
     country?: SortOrder
     language?: SortOrder
-    plan?: SortOrder
+    planId?: SortOrder
     theme?: SortOrder
     notifications?: SortOrder
     autoBackup?: SortOrder
@@ -33996,7 +33996,7 @@ export namespace Prisma {
     currency?: SortOrder
     country?: SortOrder
     language?: SortOrder
-    plan?: SortOrder
+    planId?: SortOrder
     theme?: SortOrder
     notifications?: SortOrder
     autoBackup?: SortOrder
