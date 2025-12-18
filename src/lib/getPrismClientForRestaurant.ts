@@ -232,7 +232,7 @@ function buildConnectionString(credentials: DatabaseCredentials): string {
 export function clearPrismClientCache(): void {
   console.log('[getPrismClientForRestaurant] Clearing Prisma client cache');
   prismClientCache.forEach((client) => {
-    client.$disconnect().catch((err) =>
+    client.$disconnect().catch((err: any) =>
       console.error('Error disconnecting cached client:', err)
     );
   });
