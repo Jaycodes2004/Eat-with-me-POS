@@ -144,7 +144,7 @@
 
 
 /** @format */
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../generated/tenant';
 
 const prismClientCache: Map<string, PrismaClient> = new Map();
 
@@ -168,10 +168,8 @@ export async function getPrismClientForRestaurant(
     `[getPrismClientForRestaurant] Creating tenant client for restaurant: ${restaurantId}`
   );
 
-  // Use restaurantId as cache key
   const cacheKey = restaurantId;
 
-  // Check cache first
   if (prismClientCache.has(cacheKey)) {
     console.log(
       `[getPrismClientForRestaurant] Using cached Prisma client for tenant: ${restaurantId}`
