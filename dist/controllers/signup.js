@@ -11,7 +11,6 @@ exports.signup = signup;
 // import { createTenantDatabaseAndUser, getTenantPrismaClientWithParams, runMigrationsForTenant, dropTenantDatabaseAndUser } from '../utils/dbManager';
 // import { preloadSecrets } from '../utils/awsSecrets';
 // import bcrypt from 'bcryptjs';
-const tenantDbService_1 = require("../services/tenantDbService");
 // async function generateUniqueRestaurantId(): Promise<string> {
 //   let isUnique = false;
 //   let restaurantId = '';
@@ -396,42 +395,6 @@ async function signup(req, res) {
         // 5. Run migrations for tenant DB
         console.info('[Signup] Running migrations for tenant', { restaurantId });
         await (0, dbManager_1.runMigrationsForTenant)(dbName, masterDbUser, masterDbPass, masterDbHost, masterDbPort);
-        // After migrations complete, grant permissions to tenant user
-        console.info('[Signup] Granting permissions to tenant user', { restaurantId, dbName, dbUser });
-        await (0, tenantDbService_1.withMasterClient)(async (client) => {
-            try {
-                // Grant database-level privileges
-                await client.query(`GRANT ALL PRIVILEGES ON DATABASE ${dbName} TO ${dbUser}`);
-                // Grant schema privileges
-                await client.query(`GRANT USAGE ON SCHEMA public TO ${dbUser}`);
-                // Grant table privileges for existing tables
-                await client.query(`GRANT INSERT, UPDATE, DELETE, SELECT ON ALL TABLES IN SCHEMA public TO ${dbUser}`);
-                // Grant sequence privileges for IDs and auto-increments
-                await client.query(`GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO ${dbUser}`);
-                // Set default privileges for future tables
-                await client.query(`
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT INSERT, UPDATE, DELETE, SELECT ON TABLES TO ${dbUser}
-      `);
-                // Set default privileges for future sequences
-                await client.query(`
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public
-        GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO ${dbUser}
-      `);
-                console.info('[Signup] Permissions granted successfully', { restaurantId });
-            }
-            catch (grantErr) {
-                console.error('[Signup] Failed to grant permissions', {
-                    restaurantId,
-                    error: grantErr.message,
-                });
-                throw grantErr;
-            }
-        });
-        // 6. Connect to tenant DB
-        console.info('[Signup] Connecting to tenant DB', { restaurantId });
-        // const tenantPrisma = getTenantPrismaClientWithParams(
-        //   dbName,
         //   masterDbUser,
         //   masterDbPass,
         //   masterDbHost,

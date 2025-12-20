@@ -94,6 +94,7 @@ exports.dropTenantDatabaseAndUser = dropTenantDatabaseAndUserWrapper;
 /** @format */
 const tenantDbService_1 = require("../services/tenantDbService");
 const tenant_1 = require("../generated/tenant");
+const runTenantMigration_1 = require("./runTenantMigration");
 // Cache for Prisma Clients
 const prismaClients = {};
 function encode(val) {
@@ -132,13 +133,16 @@ async function createTenantDatabaseAndUser(dbName, tenantUser, tenantPass, rootU
 // Run Prisma migrations for tenant
 //
 async function runMigrationsForTenant(dbName, rootUser, rootPass, host, port) {
-    const safePass = encode(rootPass);
-    const url = `postgresql://${rootUser}:${safePass}@${host}:${port}/${dbName}?schema=public&sslmode=require`;
-    console.log('⚠️ MIGRATION URL:', url);
-    process.env.DATABASE_URL = url;
-    process.env.DATABASE_URL_TENANT = url;
-    // TODO: Invoke actual Prisma migrate command here if/when needed,
-    // e.g. via child_process: `npx prisma migrate deploy`.
+    console.info('[dbManager] Running migrations for tenant:', dbName);
+    try {
+        // Call the async migration function with connection details
+        await (0, runTenantMigration_1.runTenantMigration)(dbName, rootUser, rootPass, host, port);
+        console.info('[dbManager] Migrations completed successfully for:', dbName);
+    }
+    catch (error) {
+        console.error('[dbManager] Migration execution failed:', error.message);
+        throw new Error(`Failed to run migrations for ${dbName}: ${error.message}`);
+    }
 }
 //
 // Drop Tenant DB + User

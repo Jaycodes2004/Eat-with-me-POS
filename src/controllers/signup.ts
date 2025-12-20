@@ -343,6 +343,8 @@ export async function signup(req: Request, res: Response) {
 		country,
 		planId,
 		posType,
+		businessAddress,
+		businessPhone,
 	} = req.body;
 
 	const normalizedUseRedis =
@@ -446,6 +448,8 @@ export async function signup(req: Request, res: Response) {
 				dbPassword,
 				useRedis: normalizedUseRedis,
 				planId,
+				address: businessAddress || '',
+				phone: businessPhone || '',
 				posType: posType || 'restaurant',
 			});
 			if (resNewTenant.data && resNewTenant.data.restaurantId) {
@@ -562,8 +566,9 @@ export async function signup(req: Request, res: Response) {
 				theme: 'light',
 				notifications: true,
 				autoBackup: false,
-				// REMOVE old `plan` field if present
-				planId, // NEW: bind admin plan id
+				planId,
+				address: businessAddress || '',
+				phone: businessPhone || '',
 			} as any,
 		});
 
