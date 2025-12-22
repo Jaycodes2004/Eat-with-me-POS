@@ -336,7 +336,7 @@ export async function signup(req: Request, res: Response) {
         theme: 'light',
         notifications: true,
         autoBackup: false,
-        plan: planName,                 // ✅ Plan name (instead of planId)
+        planId: planName,                 // ✅ Plan name (instead of planId)
         address: businessAddress || '', // ✅ From signup
         phone: businessPhone || '',     // ✅ From signup
       } as any,
