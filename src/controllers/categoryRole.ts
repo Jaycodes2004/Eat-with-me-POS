@@ -1,14 +1,21 @@
 // src/controllers/categoryRole.ts
 
 import { Request, Response } from 'express';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+
+function getPrismaOr500(req: Request, res: Response) {
+  const prisma = (req as any).prisma;
+  if (!prisma) {
+    res.status(500).json({ error: 'Tenant database not available' });
+    return null;
+  }
+  return prisma;
+}
 
 export async function getCategoriesAndRoles(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   const tenantId = (req as any).tenant?.restaurantId;
-  if (!prisma) {
-    console.error('[Categories/Roles] Missing tenant prisma client', { tenantId });
-    return res.status(500).json({ error: 'Tenant database not available' });
-  }
 
   try {
     console.info('[Categories/Roles] Fetch request received', { tenantId });
@@ -35,8 +42,8 @@ export async function getCategoriesAndRoles(req: Request, res: Response) {
 // ---- Categories ----
 
 export async function getCategories(req: Request, res: Response) {
-  // FIX: Use the tenant-specific prisma client from the request
-  const prisma = (req as any).prisma;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   const tenantId = (req as any).tenant?.restaurantId;
   try {
     const { type } = req.query;
@@ -63,8 +70,8 @@ export async function getCategories(req: Request, res: Response) {
 }
 
 export async function createCategory(req: Request, res: Response) {
-  // FIX: Use the tenant-specific prisma client from the request
-  const prisma = (req as any).prisma;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   const tenantId = (req as any).tenant?.restaurantId;
   try {
     const { name, description, color, type, isActive } = req.body;
@@ -122,17 +129,48 @@ export async function createCategory(req: Request, res: Response) {
       message: (error as Error)?.message,
       stack: (error as Error)?.stack,
     });
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+      return res.status(409).json({ error: 'Category name already exists' });
+    }
     res.status(500).json({ error: 'Failed to create category' });
   }
 }
 
 export async function updateCategory(req: Request, res: Response) {
-  // FIX: Use the tenant-specific prisma client from the request
-  const prisma = (req as any).prisma;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
+  const { id } = req.params;
+  const { name, description, color, type, isActive } = req.body ?? {};
+  const tenantId = (req as any).tenant?.restaurantId;
+
+  const data: Record<string, unknown> = {};
+  if (name !== undefined) {
+    const trimmed = typeof name === 'string' ? name.trim() : '';
+    if (!trimmed) return res.status(400).json({ error: 'Category name cannot be empty' });
+    data.name = trimmed;
+  }
+  if (type !== undefined) {
+    const rawType = typeof type === 'string' ? type.trim().toLowerCase() : '';
+    const allowedTypes = new Set(['menu', 'expense', 'inventory', 'supplier']);
+    if (!rawType || !allowedTypes.has(rawType)) {
+      return res.status(400).json({ error: 'Category type is invalid' });
+    }
+    data.type = rawType;
+  }
+  if (description !== undefined) data.description = description;
+  if (color !== undefined) {
+    const normalizedColor =
+      typeof color === 'string' && color.trim().length > 0 ? color.trim() : null;
+    data.color = normalizedColor;
+  }
+  if (isActive !== undefined) {
+    if (typeof isActive !== 'boolean') {
+      return res.status(400).json({ error: 'isActive must be boolean' });
+    }
+    data.isActive = isActive;
+  }
+
   try {
-    const { id } = req.params;
-    const data = req.body;
-    const tenantId = (req as any).tenant?.restaurantId;
     console.info('[Categories] Update request received', {
       tenantId,
       id,
@@ -145,34 +183,43 @@ export async function updateCategory(req: Request, res: Response) {
       name: cat.name,
     });
     res.json(cat);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Categories] Update failed', {
-      tenantId: (req as any).tenant?.restaurantId,
-      id: req.params.id,
-      message: (error as Error)?.message,
-      stack: (error as Error)?.stack,
+      tenantId,
+      id,
+      message: error?.message,
+      stack: error?.stack,
     });
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') return res.status(404).json({ error: 'Category not found' });
+      if (error.code === 'P2002') return res.status(409).json({ error: 'Category name already exists' });
+    }
     res.status(500).json({ error: 'Failed to update category' });
   }
 }
 
 export async function deleteCategory(req: Request, res: Response) {
-  // FIX: Use the tenant-specific prisma client from the request
-  const prisma = (req as any).prisma;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
+  const { id } = req.params;
+  const tenantId = (req as any).tenant?.restaurantId;
   try {
-    const { id } = req.params;
-    const tenantId = (req as any).tenant?.restaurantId;
     console.info('[Categories] Delete request received', { tenantId, id });
     await prisma.category.delete({ where: { id } });
     console.info('[Categories] Delete success', { tenantId, id });
     res.json({ deleted: true });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Categories] Delete failed', {
-      tenantId: (req as any).tenant?.restaurantId,
-      id: req.params.id,
-      message: (error as Error)?.message,
-      stack: (error as Error)?.stack,
+      tenantId,
+      id,
+      message: error?.message,
+      stack: error?.stack,
     });
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') return res.status(404).json({ error: 'Category not found' });
+      if (error.code === 'P2003')
+        return res.status(409).json({ error: 'Category is in use and cannot be deleted' });
+    }
     res.status(500).json({ error: 'Failed to delete category' });
   }
 }
@@ -180,8 +227,8 @@ export async function deleteCategory(req: Request, res: Response) {
 // ---- Roles ----
 
 export async function getRoles(req: Request, res: Response) {
-  // FIX: Use the tenant-specific prisma client from the request
-  const prisma = (req as any).prisma;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   try {
     const tenantId = (req as any).tenant?.restaurantId;
     console.info('[Roles] List request received', { tenantId });
@@ -199,8 +246,9 @@ export async function getRoles(req: Request, res: Response) {
 }
 
 export const createRole = async (req: Request, res: Response) => {
-  const prisma = (req as any).prisma;
-  const { name, permissions } = req.body;
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
+  const { name, permissions, dashboardModules } = req.body;
 
   if (!name) {
     return res.status(400).json({ error: 'Role name is required.' });
@@ -211,12 +259,19 @@ export const createRole = async (req: Request, res: Response) => {
   if (permissions && !Array.isArray(permissions)) {
     return res.status(400).json({ error: 'Permissions must be an array of strings.' });
   }
+  if (dashboardModules && !Array.isArray(dashboardModules)) {
+    return res.status(400).json({ error: 'dashboardModules must be an array of strings.' });
+  }
   // --- END OF FIX ---
 
   try {
     const newRole = await prisma.role.create({
       // Ensure we always save an array
-      data: { name, permissions: permissions || [] },
+      data: {
+        name: name.trim(),
+        permissions: permissions || [],
+        dashboardModules: dashboardModules || [],
+      },
     });
     res.status(201).json(newRole);
   } catch (error: any) {
@@ -229,23 +284,35 @@ export const createRole = async (req: Request, res: Response) => {
 };
 
 export const updateRole = async (req: Request, res: Response) => {
-    const prisma = (req as any).prisma;
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma) return;
     const { id } = req.params;
-    const { name, permissions } = req.body;
+    const { name, permissions, dashboardModules } = req.body;
 
     // --- THIS IS THE FIX ---
     // Validate that permissions is an array if it's being updated.
     if (permissions && !Array.isArray(permissions)) {
       return res.status(400).json({ error: 'Permissions must be an array of strings.' });
     }
+    if (dashboardModules && !Array.isArray(dashboardModules)) {
+      return res.status(400).json({ error: 'dashboardModules must be an array of strings.' });
+    }
     // --- END OF FIX ---
+
+    const data: Record<string, unknown> = {};
+    if (name !== undefined) {
+      if (!name.trim()) return res.status(400).json({ error: 'Role name cannot be empty.' });
+      data.name = name.trim();
+    }
+    if (permissions !== undefined) data.permissions = permissions;
+    if (dashboardModules !== undefined) data.dashboardModules = dashboardModules;
 
     try {
     const tenantId = (req as any).tenant?.restaurantId;
     console.info('[Roles] Update request received', { tenantId, id, fields: Object.keys(req.body) });
         const updatedRole = await prisma.role.update({
-            where: { id },
-            data: { name, permissions },
+        where: { id },
+        data,
         });
     console.info('[Roles] Update success', { tenantId, id });
         res.json(updatedRole);
@@ -256,13 +323,17 @@ export const updateRole = async (req: Request, res: Response) => {
       message: error?.message,
       stack: error?.stack,
     });
-        res.status(500).json({ error: 'Failed to update role.' });
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') return res.status(404).json({ error: 'Role not found.' });
+        if (error.code === 'P2002') return res.status(409).json({ error: 'A role with this name already exists.' });
+      }
+      res.status(500).json({ error: 'Failed to update role.' });
     }
 };
 
 export async function deleteRole(req: Request, res: Response) {
-  // FIX: Use the tenant-specific prisma client from the request
-  const prisma = (req as any).prisma;
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma) return;
   try {
     const { id } = req.params;
     const tenantId = (req as any).tenant?.restaurantId;
@@ -277,6 +348,11 @@ export async function deleteRole(req: Request, res: Response) {
       message: (error as Error)?.message,
       stack: (error as Error)?.stack,
     });
-    res.status(500).json({ error: 'Failed to delete role' });
+    if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') return res.status(404).json({ error: 'Role not found' });
+        if (error.code === 'P2003')
+          return res.status(409).json({ error: 'Role is in use and cannot be deleted' });
+      }
+      res.status(500).json({ error: 'Failed to delete role' });
   }
 }

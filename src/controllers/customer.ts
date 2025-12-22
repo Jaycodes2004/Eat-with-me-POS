@@ -1,10 +1,46 @@
-import { Request, Response } from 'express';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export async function getAllCustomers(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
-  if (!prisma) {
-    return res.status(500).json({ message: 'Tenant database not available.' });
-  }
+function getPrismaOr500(req: any, res: any) {
+	const prisma = req.prisma;
+	if (!prisma) {
+		res.status(500).json({ error: 'Tenant database not available.' });
+		return null;
+	}
+	return prisma;
+}
+
+function pickCustomerCreate(body: any) {
+  const { name, phone, email, notes, whatsappOptIn, birthDate, anniversary, preferences } = body ?? {};
+  return {
+    name: name?.trim(),
+    phone: phone?.trim() || null,
+    email: email?.trim() || null,
+    notes: notes ?? null,
+    whatsappOptIn: Boolean(whatsappOptIn),
+    birthDate: birthDate ?? null,
+    anniversary: anniversary ?? null,
+    preferences: Array.isArray(preferences) ? preferences : [],
+  };
+}
+
+function pickCustomerUpdate(body: any) {
+  const allowed: Record<string, any> = {};
+  const { name, phone, email, notes, whatsappOptIn, birthDate, anniversary, preferences, status } = body ?? {};
+  if (name !== undefined) allowed.name = name?.trim();
+  if (phone !== undefined) allowed.phone = phone?.trim() || null;
+  if (email !== undefined) allowed.email = email?.trim() || null;
+  if (notes !== undefined) allowed.notes = notes ?? null;
+  if (whatsappOptIn !== undefined) allowed.whatsappOptIn = Boolean(whatsappOptIn);
+  if (birthDate !== undefined) allowed.birthDate = birthDate ?? null;
+  if (anniversary !== undefined) allowed.anniversary = anniversary ?? null;
+  if (preferences !== undefined) allowed.preferences = Array.isArray(preferences) ? preferences : [];
+  if (status !== undefined) allowed.status = status;
+  return allowed;
+}
+
+export async function getAllCustomers(req: any, res: any) {
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   try {
     console.info('[Customer] Fetch all request', {
       tenantId: (req as any).tenant?.restaurantId,
@@ -20,34 +56,36 @@ export async function getAllCustomers(req: Request, res: Response) {
   }
 }
 
-export async function createCustomer(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
-  if (!prisma) {
-    return res.status(500).json({ message: 'Tenant database not available.' });
+export async function createCustomer(req: any, res: any) {
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
+
+  const data = pickCustomerCreate(req.body);
+  if (!data.name) {
+    return res.status(400).json({ message: 'Name is required.' });
   }
+
   try {
     console.info('[Customer] Create request', {
-      body: req.body,
       tenantId: (req as any).tenant?.restaurantId,
     });
-    const customer = await prisma.customer.create({ data: req.body });
+    const customer = await prisma.customer.create({ data });
     res.status(201).json(customer);
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+      return res.status(409).json({ message: 'Customer with this phone or email already exists.' });
+    }
     console.error('[Customer] Create error', {
-      body: req.body,
-      tenantId: (req as any).tenant?.restaurantId,
-      message: (error as Error)?.message,
-      stack: (error as Error)?.stack,
+      message: error?.message,
+      stack: error?.stack,
     });
     res.status(500).json({ message: 'Failed to create customer.' });
   }
 }
 
-export async function getCustomerById(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
-  if (!prisma) {
-    return res.status(500).json({ error: 'Tenant database not available.' });
-  }
+export async function getCustomerById(req: any, res: any) {
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   const { id } = req.params;
   try {
     console.info('[Customer] Get by ID request', {
@@ -55,11 +93,8 @@ export async function getCustomerById(req: Request, res: Response) {
       tenantId: (req as any).tenant?.restaurantId,
     });
     const customer = await prisma.customer.findUnique({ where: { id } });
-    if (customer) {
-      res.json(customer);
-    } else {
-      res.status(404).json({ error: 'Customer not found' });
-    }
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    res.json(customer);
   } catch (error) {
     console.error('[Customer] Get by ID error', {
       id,
@@ -70,38 +105,45 @@ export async function getCustomerById(req: Request, res: Response) {
   }
 }
 
-export async function updateCustomer(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
-  if (!prisma) {
-    return res.status(500).json({ error: 'Tenant database not available.' });
-  }
+export async function updateCustomer(req: any, res: any) {
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   const { id } = req.params;
+  const data = pickCustomerUpdate(req.body);
+
+  if (data.name !== undefined && !data.name) {
+    return res.status(400).json({ message: 'Name cannot be empty.' });
+  }
+
   try {
     console.info('[Customer] Update request', {
       id,
-      body: req.body,
+      fields: Object.keys(data),
       tenantId: (req as any).tenant?.restaurantId,
     });
     const updatedCustomer = await prisma.customer.update({
       where: { id },
-      data: req.body,
+      data,
     });
     res.json(updatedCustomer);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Customer] Update error', {
       id,
-      message: (error as Error)?.message,
-      stack: (error as Error)?.stack,
+      message: error?.message,
+      stack: error?.stack,
     });
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') return res.status(404).json({ error: 'Customer not found' });
+      if (error.code === 'P2002')
+        return res.status(409).json({ error: 'Customer with this phone or email already exists.' });
+    }
     res.status(500).json({ error: 'Failed to update customer' });
   }
 }
 
-export async function deleteCustomer(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
-  if (!prisma) {
-    return res.status(500).json({ error: 'Tenant database not available.' });
-  }
+export async function deleteCustomer(req: any, res: any) {
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
   const { id } = req.params;
   try {
     console.info('[Customer] Delete request', {
@@ -110,21 +152,24 @@ export async function deleteCustomer(req: Request, res: Response) {
     });
     await prisma.customer.delete({ where: { id } });
     res.status(204).send();
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Customer] Delete error', {
       id,
-      message: (error as Error)?.message,
-      stack: (error as Error)?.stack,
+      message: error?.message,
+      stack: error?.stack,
     });
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') return res.status(404).json({ error: 'Customer not found' });
+      if (error.code === 'P2003')
+        return res.status(409).json({ error: 'Customer has related records and cannot be deleted' });
+    }
     res.status(500).json({ error: 'Failed to delete customer' });
   }
 }
 
-export async function getExtendedCustomers(req: Request, res: Response) {
-  const prisma = (req as any).prisma;
-  if (!prisma) {
-    return res.status(500).json({ error: 'Tenant database not available.' });
-  }
+export async function getExtendedCustomers(req: any, res: any) {
+  const prisma = getPrismaOr500(req, res);
+  if (!prisma) return;
 
   try {
     const customers = await prisma.customer.findMany({
@@ -143,7 +188,9 @@ export async function getExtendedCustomers(req: Request, res: Response) {
     const extended = customers.map((customer: any) => {
       const orders = customer.orders ?? [];
       const totalOrders = customer.totalOrders ?? orders.length;
-      const totalSpent = Number(customer.totalSpent ?? orders.reduce((sum: number, order: any) => sum + Number(order.totalAmount || 0), 0));
+      const totalSpent = Number(
+        customer.totalSpent ?? orders.reduce((sum: number, order: any) => sum + Number(order.totalAmount || 0), 0)
+      );
       const visitCount = customer.visitCount ?? totalOrders;
       const averageOrderValue = totalOrders > 0 ? Number((totalSpent / totalOrders).toFixed(2)) : 0;
       const lastVisit = customer.lastVisit ?? (orders[0]?.orderTime ?? null);
