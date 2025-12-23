@@ -218,6 +218,7 @@ import { authenticateToken } from './middleware/auth';
 
 // Routes
 import { authRoutes } from './routes/auth';
+import forgotPasswordRoutes from './routes/forgotPassword';
 import { staffRoutes } from './routes/staff';
 import menuRoutes from './routes/menu';
 import { orderRoutes } from './routes/order';
@@ -264,6 +265,7 @@ export async function createApp(): Promise<express.Express> {
 	// Used for signup + login
 	// ------------------------
 	app.use('/api', authRoutes);
+		app.use('/api/auth', forgotPasswordRoutes);
 
 	// ------------------------
 	// Protected Routes

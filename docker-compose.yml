@@ -11,6 +11,24 @@ services:
     networks:
       - backend-network
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: eatwithme-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-eatwithme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+
 networks:
   backend-network:
     external: true
+
+volumes:
+  postgres_data:

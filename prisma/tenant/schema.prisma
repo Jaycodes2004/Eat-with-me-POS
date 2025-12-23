@@ -423,3 +423,13 @@ model LoyaltyLog {
   action     String?
   date       DateTime @default(now())
 }
+
+model PasswordResetToken {
+  id           String   @id @default(cuid())
+  email        String
+  restaurantId String
+  token        String   @unique
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  usedAt       DateTime?
+}
