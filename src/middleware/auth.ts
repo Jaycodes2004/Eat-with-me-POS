@@ -23,9 +23,17 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
       return res.status(403).json({ message: 'Forbidden: Invalid token payload' });
     }
 
+    // If a header is provided and differs, log and fall back to the token value to avoid false 403s
     if (headerRestaurantId && headerRestaurantId !== decoded.restaurantId) {
-      return res.status(403).json({ message: 'Forbidden: Restaurant mismatch' });
+      console.warn('[auth] x-restaurant-id mismatch, using token restaurantId', {
+        headerRestaurantId,
+        tokenRestaurantId: decoded.restaurantId,
+        userId: decoded.id || decoded.userId,
+      });
     }
+
+    // Normalize downstream access: always set the header and request fields from the token
+    req.headers['x-restaurant-id'] = decoded.restaurantId;
 
     // Attach the restaurantId to the request object so subsequent middleware can use it
     (req as any).restaurantId = decoded.restaurantId;

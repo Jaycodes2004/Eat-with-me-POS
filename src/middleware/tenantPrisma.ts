@@ -84,7 +84,9 @@ export const tenantPrismaMiddleware = async (
   next: () => void
 ) => {
   // Extract restaurantId from request
+  // Prefer restaurantId attached by auth middleware; fallback to body/query/header
   const restaurantId =
+    req.restaurantId ||
     req.body?.restaurantId ||
     req.query?.restaurantId ||
     req.headers?.['x-restaurant-id'];
