@@ -169,7 +169,6 @@ export async function signup(req: Request, res: Response) {
     const adminRole = await tenantPrisma.role.create({
       data: {
         name: 'Admin',
-        description: 'Administrator with full access',
         permissions: [
           'view_dashboard',
           'manage_staff',
@@ -193,9 +192,10 @@ export async function signup(req: Request, res: Response) {
       data: {
         name: adminName,
         email,
-        passwordHash: hashedPassword,
+        password: hashedPassword,
         roleId: adminRole.id,
         phone: businessPhone || '',
+        pin: '0000',
         isActive: true,
       },
     });

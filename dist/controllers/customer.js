@@ -6,12 +6,56 @@ exports.getCustomerById = getCustomerById;
 exports.updateCustomer = updateCustomer;
 exports.deleteCustomer = deleteCustomer;
 exports.getExtendedCustomers = getExtendedCustomers;
-async function getAllCustomers(req, res) {
-    var _a;
+const library_1 = require("@prisma/client/runtime/library");
+function getPrismaOr500(req, res) {
     const prisma = req.prisma;
     if (!prisma) {
-        return res.status(500).json({ message: 'Tenant database not available.' });
+        res.status(500).json({ error: 'Tenant database not available.' });
+        return null;
     }
+    return prisma;
+}
+function pickCustomerCreate(body) {
+    const { name, phone, email, notes, whatsappOptIn, birthDate, anniversary, preferences } = body !== null && body !== void 0 ? body : {};
+    return {
+        name: name === null || name === void 0 ? void 0 : name.trim(),
+        phone: (phone === null || phone === void 0 ? void 0 : phone.trim()) || null,
+        email: (email === null || email === void 0 ? void 0 : email.trim()) || null,
+        notes: notes !== null && notes !== void 0 ? notes : null,
+        whatsappOptIn: Boolean(whatsappOptIn),
+        birthDate: birthDate !== null && birthDate !== void 0 ? birthDate : null,
+        anniversary: anniversary !== null && anniversary !== void 0 ? anniversary : null,
+        preferences: Array.isArray(preferences) ? preferences : [],
+    };
+}
+function pickCustomerUpdate(body) {
+    const allowed = {};
+    const { name, phone, email, notes, whatsappOptIn, birthDate, anniversary, preferences, status } = body !== null && body !== void 0 ? body : {};
+    if (name !== undefined)
+        allowed.name = name === null || name === void 0 ? void 0 : name.trim();
+    if (phone !== undefined)
+        allowed.phone = (phone === null || phone === void 0 ? void 0 : phone.trim()) || null;
+    if (email !== undefined)
+        allowed.email = (email === null || email === void 0 ? void 0 : email.trim()) || null;
+    if (notes !== undefined)
+        allowed.notes = notes !== null && notes !== void 0 ? notes : null;
+    if (whatsappOptIn !== undefined)
+        allowed.whatsappOptIn = Boolean(whatsappOptIn);
+    if (birthDate !== undefined)
+        allowed.birthDate = birthDate !== null && birthDate !== void 0 ? birthDate : null;
+    if (anniversary !== undefined)
+        allowed.anniversary = anniversary !== null && anniversary !== void 0 ? anniversary : null;
+    if (preferences !== undefined)
+        allowed.preferences = Array.isArray(preferences) ? preferences : [];
+    if (status !== undefined)
+        allowed.status = status;
+    return allowed;
+}
+async function getAllCustomers(req, res) {
+    var _a;
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma)
+        return;
     try {
         console.info('[Customer] Fetch all request', {
             tenantId: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId,
@@ -28,23 +72,26 @@ async function getAllCustomers(req, res) {
     }
 }
 async function createCustomer(req, res) {
-    var _a, _b;
-    const prisma = req.prisma;
-    if (!prisma) {
-        return res.status(500).json({ message: 'Tenant database not available.' });
+    var _a;
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma)
+        return;
+    const data = pickCustomerCreate(req.body);
+    if (!data.name) {
+        return res.status(400).json({ message: 'Name is required.' });
     }
     try {
         console.info('[Customer] Create request', {
-            body: req.body,
             tenantId: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId,
         });
-        const customer = await prisma.customer.create({ data: req.body });
+        const customer = await prisma.customer.create({ data });
         res.status(201).json(customer);
     }
     catch (error) {
+        if (error instanceof library_1.PrismaClientKnownRequestError && error.code === 'P2002') {
+            return res.status(409).json({ message: 'Customer with this phone or email already exists.' });
+        }
         console.error('[Customer] Create error', {
-            body: req.body,
-            tenantId: (_b = req.tenant) === null || _b === void 0 ? void 0 : _b.restaurantId,
             message: error === null || error === void 0 ? void 0 : error.message,
             stack: error === null || error === void 0 ? void 0 : error.stack,
         });
@@ -53,10 +100,9 @@ async function createCustomer(req, res) {
 }
 async function getCustomerById(req, res) {
     var _a;
-    const prisma = req.prisma;
-    if (!prisma) {
-        return res.status(500).json({ error: 'Tenant database not available.' });
-    }
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma)
+        return;
     const { id } = req.params;
     try {
         console.info('[Customer] Get by ID request', {
@@ -64,12 +110,9 @@ async function getCustomerById(req, res) {
             tenantId: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId,
         });
         const customer = await prisma.customer.findUnique({ where: { id } });
-        if (customer) {
-            res.json(customer);
-        }
-        else {
-            res.status(404).json({ error: 'Customer not found' });
-        }
+        if (!customer)
+            return res.status(404).json({ error: 'Customer not found' });
+        res.json(customer);
     }
     catch (error) {
         console.error('[Customer] Get by ID error', {
@@ -82,20 +125,23 @@ async function getCustomerById(req, res) {
 }
 async function updateCustomer(req, res) {
     var _a;
-    const prisma = req.prisma;
-    if (!prisma) {
-        return res.status(500).json({ error: 'Tenant database not available.' });
-    }
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma)
+        return;
     const { id } = req.params;
+    const data = pickCustomerUpdate(req.body);
+    if (data.name !== undefined && !data.name) {
+        return res.status(400).json({ message: 'Name cannot be empty.' });
+    }
     try {
         console.info('[Customer] Update request', {
             id,
-            body: req.body,
+            fields: Object.keys(data),
             tenantId: (_a = req.tenant) === null || _a === void 0 ? void 0 : _a.restaurantId,
         });
         const updatedCustomer = await prisma.customer.update({
             where: { id },
-            data: req.body,
+            data,
         });
         res.json(updatedCustomer);
     }
@@ -105,15 +151,20 @@ async function updateCustomer(req, res) {
             message: error === null || error === void 0 ? void 0 : error.message,
             stack: error === null || error === void 0 ? void 0 : error.stack,
         });
+        if (error instanceof library_1.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025')
+                return res.status(404).json({ error: 'Customer not found' });
+            if (error.code === 'P2002')
+                return res.status(409).json({ error: 'Customer with this phone or email already exists.' });
+        }
         res.status(500).json({ error: 'Failed to update customer' });
     }
 }
 async function deleteCustomer(req, res) {
     var _a;
-    const prisma = req.prisma;
-    if (!prisma) {
-        return res.status(500).json({ error: 'Tenant database not available.' });
-    }
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma)
+        return;
     const { id } = req.params;
     try {
         console.info('[Customer] Delete request', {
@@ -129,14 +180,19 @@ async function deleteCustomer(req, res) {
             message: error === null || error === void 0 ? void 0 : error.message,
             stack: error === null || error === void 0 ? void 0 : error.stack,
         });
+        if (error instanceof library_1.PrismaClientKnownRequestError) {
+            if (error.code === 'P2025')
+                return res.status(404).json({ error: 'Customer not found' });
+            if (error.code === 'P2003')
+                return res.status(409).json({ error: 'Customer has related records and cannot be deleted' });
+        }
         res.status(500).json({ error: 'Failed to delete customer' });
     }
 }
 async function getExtendedCustomers(req, res) {
-    const prisma = req.prisma;
-    if (!prisma) {
-        return res.status(500).json({ error: 'Tenant database not available.' });
-    }
+    const prisma = getPrismaOr500(req, res);
+    if (!prisma)
+        return;
     try {
         const customers = await prisma.customer.findMany({
             include: {
