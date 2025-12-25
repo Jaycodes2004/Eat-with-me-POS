@@ -1,47 +1,14 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+/** @format */
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.signup = signup;
 const axios_1 = __importDefault(require("axios"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const dbManager_1 = require("../utils/dbManager");
 const awsSecrets_1 = require("../utils/awsSecrets");
-const bcryptjs_1 = __importDefault(require("bcryptjs"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const ADMIN_BASE_URL = process.env.ADMIN_BASE_URL || 'https://admin.easytomanage.xyz';
 async function generateUniqueRestaurantId() {
     let isUnique = false;
@@ -49,12 +16,12 @@ async function generateUniqueRestaurantId() {
     while (!isUnique) {
         restaurantId = Math.floor(1000000 + Math.random() * 9000000).toString();
         try {
-            const res = await axios_1.default.get(`${ADMIN_BASE_URL}/api/tenants/${restaurantId}`);
+            const res = await axios_1.default.get(`${ADMIN_BASE_URL}/api/tenants/restaurantId/${restaurantId}`);
             if (!res.data) {
                 isUnique = true;
             }
         }
-        catch (_err) {
+        catch (_a) {
             isUnique = true;
         }
     }
@@ -63,28 +30,29 @@ async function generateUniqueRestaurantId() {
 async function loadMasterDbConfig() {
     const isDevelopment = process.env.NODE_ENV === 'development';
     if (isDevelopment) {
-        console.info('[Signup] Development mode - loading DB config from environment variables');
         const masterDbUser = process.env.MASTER_DB_USER || process.env.DB_USER || 'postgres';
         const masterDbPass = process.env.MASTER_DB_PASSWORD || process.env.DB_PASSWORD || '';
         const masterDbHost = process.env.MASTER_DB_HOST || process.env.DB_HOST || 'localhost';
         const masterDbPort = process.env.MASTER_DB_PORT || process.env.DB_PORT || '5432';
         return { masterDbUser, masterDbPass, masterDbHost, masterDbPort };
     }
-    console.info('[Signup] Production mode - loading DB config from AWS SSM Parameter Store');
     const [masterDbUser, masterDbPass, masterDbHost, masterDbPort] = await Promise.all([
-        (0, awsSecrets_1.getParameter)('/eatwithme/db-user'),
-        (0, awsSecrets_1.getParameter)('/eatwithme/db-password'),
-        (0, awsSecrets_1.getParameter)('/eatwithme/db-host'),
-        (0, awsSecrets_1.getParameter)('/eatwithme/db-port'),
+        (0, awsSecrets_1.getParameter)('eatwithme-db-user'),
+        (0, awsSecrets_1.getParameter)('eatwithme-db-password'),
+        (0, awsSecrets_1.getParameter)('eatwithme-db-host'),
+        (0, awsSecrets_1.getParameter)('eatwithme-db-port'),
     ]);
     return { masterDbUser, masterDbPass, masterDbHost, masterDbPort };
 }
 async function signup(req, res) {
-    console.log('[Signup] Request received:', { body: req.body });
+    var _a, _b, _c, _d;
+    console.log('[Signup] Raw request body:', req.body);
     const { restaurantName, adminName, email, password, confirmPassword, useRedis, country, planId, posType, businessAddress, businessPhone, } = req.body;
-    const normalizedUseRedis = typeof useRedis === 'string' ? useRedis.toLowerCase() === 'true' : Boolean(useRedis);
+    const normalizedUseRedis = typeof useRedis === 'string'
+        ? useRedis.toLowerCase() === 'true'
+        : Boolean(useRedis);
     const confirmedPassword = confirmPassword !== null && confirmPassword !== void 0 ? confirmPassword : password;
-    console.info('[Signup] Incoming request validated', {
+    console.info('[Signup] Incoming request', {
         restaurantName,
         adminName,
         email,
@@ -94,15 +62,15 @@ async function signup(req, res) {
         hasConfirmPassword: Boolean(confirmPassword),
     });
     if (!password) {
-        console.warn('[Signup] Validation failed - missing password', { email });
+        console.warn('[Signup] Missing password', { email });
         return res.status(400).json({ message: 'Password is required' });
     }
     if (password !== confirmedPassword) {
-        console.warn('[Signup] Validation failed - passwords do not match', { email });
+        console.warn('[Signup] Password mismatch detected', { email });
         return res.status(400).json({ message: 'Passwords do not match' });
     }
     if (!planId) {
-        console.warn('[Signup] Validation failed - missing planId', { email });
+        console.warn('[Signup] Missing planId', { email });
         return res.status(400).json({ message: 'planId is required' });
     }
     let restaurantId = null;
@@ -110,208 +78,241 @@ async function signup(req, res) {
     let dbUser = null;
     let dbPassword = null;
     try {
-        console.info('[Signup] Step 1: Checking for existing tenant', { email });
+        // 1. Check existing tenant by email via admin backend
+        console.info('[Signup] Checking for existing tenant', { email });
         let tenantExists = false;
         try {
             const resTenant = await axios_1.default.get(`${ADMIN_BASE_URL}/api/tenants?email=${encodeURIComponent(email)}`);
-            if (resTenant.data) {
+            if (resTenant.data)
                 tenantExists = true;
-            }
         }
-        catch (_err) {
+        catch (_e) {
             tenantExists = false;
         }
         if (tenantExists) {
             console.warn('[Signup] Tenant already exists', { email });
-            return res.status(409).json({ message: 'A restaurant with this email already exists.' });
+            return res
+                .status(409)
+                .json({ message: 'A restaurant with this email already exists.' });
         }
-        console.info('[Signup] Step 2: Generating identifiers');
+        // 2. Generate identifiers
+        console.info('[Signup] Generating identifiers');
         restaurantId = await generateUniqueRestaurantId();
         dbName = `tenant_${restaurantId}`;
         dbUser = `user_${restaurantId}`;
-        dbPassword = `pass_${Math.random().toString(36).slice(-8)}`;
-        console.info('[Signup] Identifiers generated', { restaurantId, dbName, dbUser });
-        console.info('[Signup] Step 3: Loading master DB credentials');
+        dbPassword = `pass${Math.random().toString(36).slice(-8)}`;
+        // 3. Load master DB config
+        console.info('[Signup] Loading master DB config');
         const { masterDbUser, masterDbPass, masterDbHost, masterDbPort } = await loadMasterDbConfig();
-        console.info('[Signup] Master DB credentials loaded', { masterDbHost, masterDbPort, masterDbUser });
-        console.info('[Signup] Step 4: Creating tenant database and user', {
+        // 4. Create tenant DB + user
+        console.info('[Signup] Creating tenant database and user', {
             restaurantId,
             dbName,
             dbUser,
         });
         await (0, dbManager_1.createTenantDatabaseAndUser)(dbName, dbUser, dbPassword, masterDbUser, masterDbPass, masterDbHost, masterDbPort);
-        console.info('[Signup] Tenant database and user created successfully', { restaurantId, dbName });
-        console.info('[Signup] Step 5: Running Prisma migrations for tenant DB', { restaurantId, dbName });
+        // 5. Create tenant record in master DB (via admin backend)
+        console.info('[Signup] Creating tenant record in master DB via admin backend', {
+            restaurantId,
+        });
+        let newTenantId = restaurantId;
         try {
-            await (0, dbManager_1.runMigrationsForTenant)(dbName, masterDbUser, masterDbPass, masterDbHost, masterDbPort);
-            console.info('[Signup] Migrations completed successfully - all tables created', { restaurantId, dbName });
+            const resNewTenant = await axios_1.default.post(`${ADMIN_BASE_URL}/api/tenants`, {
+                name: restaurantName,
+                email,
+                restaurantId,
+                dbName,
+                dbUser,
+                dbPassword,
+                useRedis: normalizedUseRedis,
+                planId,
+                address: businessAddress,
+                phone: businessPhone,
+                posType: posType || 'restaurant',
+            });
+            if ((_a = resNewTenant.data) === null || _a === void 0 ? void 0 : _a.restaurantId) {
+                newTenantId = resNewTenant.data.restaurantId;
+            }
         }
-        catch (migrationError) {
-            console.error('[Signup] Migration failed - aborting signup', { restaurantId, error: migrationError.message });
-            throw new Error(`Failed to run migrations for tenant ${restaurantId}: ${migrationError.message}`);
+        catch (err) {
+            console.error('[Signup] Admin backend tenant create failed', {
+                restaurantId,
+                email,
+                status: (_b = err === null || err === void 0 ? void 0 : err.response) === null || _b === void 0 ? void 0 : _b.status,
+                data: (_c = err === null || err === void 0 ? void 0 : err.response) === null || _c === void 0 ? void 0 : _c.data,
+                message: err === null || err === void 0 ? void 0 : err.message,
+            });
+            return res
+                .status(500)
+                .json({ message: 'Failed to create tenant in master DB.' });
         }
-        console.info('[Signup] Step 6: Creating tenant Prisma client with all parameters', {
+        // 6. Run migrations for tenant DB
+        console.info('[Signup] Running migrations for tenant', {
             restaurantId,
             dbName,
-            dbHost: masterDbHost,
-            dbPort: masterDbPort,
-            dbUser,
         });
+        await (0, dbManager_1.runMigrationsForTenant)(dbName, masterDbUser, masterDbPass, masterDbHost, masterDbPort);
+        // 7. Connect to tenant DB
+        console.info('[Signup] Connecting to tenant DB', { restaurantId, dbName });
         const tenantPrisma = (0, dbManager_1.getTenantPrismaClientWithParams)(dbName, dbUser, dbPassword, masterDbHost, masterDbPort);
-        console.info('[Signup] Tenant Prisma client created successfully', { restaurantId });
-        console.info('[Signup] Step 7: Hashing password');
-        const hashedPassword = await bcryptjs_1.default.hash(password, 10);
-        console.info('[Signup] Step 8: Creating default admin role in tenant DB', { restaurantId });
+        // 8. Seed admin role
+        console.info('[Signup] Seeding admin role', { restaurantId });
         const adminRole = await tenantPrisma.role.create({
             data: {
                 name: 'Admin',
-                permissions: [
-                    'view_dashboard',
-                    'manage_staff',
-                    'manage_menu',
-                    'manage_orders',
-                    'manage_tables',
-                    'view_reports',
-                    'manage_settings',
-                    'all_access',
+                permissions: ['all_access'],
+                dashboardModules: [
+                    'dashboard',
+                    'pos',
+                    'reports',
+                    'staff',
+                    'inventory',
+                    'menu',
+                    'tables',
                 ],
             },
         });
-        console.info('[Signup] Admin role created successfully', { restaurantId, roleId: adminRole.id });
-        console.info('[Signup] Step 9: Creating admin user in tenant DB', {
+        // 9. Seed admin user
+        const salt = await bcryptjs_1.default.genSalt(10);
+        const hashedPassword = await bcryptjs_1.default.hash(password, salt);
+        console.info('[Signup] Seeding admin user', {
             restaurantId,
+            adminEmail: email,
             adminName,
-            email,
         });
-        const adminUser = await tenantPrisma.staff.create({
+        await tenantPrisma.staff.create({
             data: {
                 name: adminName,
                 email,
                 password: hashedPassword,
-                roleId: adminRole.id,
                 phone: businessPhone || '',
                 pin: '0000',
-                isActive: true,
+                permissions: ['all_access'],
+                dashboardModules: [
+                    'dashboard',
+                    'pos',
+                    'reports',
+                    'staff',
+                    'inventory',
+                    'menu',
+                    'tables',
+                ],
+                role: {
+                    connect: { id: adminRole.id },
+                },
             },
         });
-        console.info('[Signup] Admin user created successfully', { restaurantId, staffId: adminUser.id });
+        // 10. Fetch plan name
+        let planName = planId;
+        try {
+            const planRes = await axios_1.default.get(`${ADMIN_BASE_URL}/api/plans/${planId}`);
+            if ((_d = planRes.data) === null || _d === void 0 ? void 0 : _d.name) {
+                planName = planRes.data.name;
+            }
+            console.info('[Signup] Plan name fetched successfully', {
+                planId,
+                planName,
+            });
+        }
+        catch (err) {
+            console.warn('[Signup] Failed to fetch plan name, using planId as fallback', { planId, error: err === null || err === void 0 ? void 0 : err.message });
+        }
+        // 11. Seed restaurant settings
+        console.info('[Signup] Seeding restaurant settings in tenant DB', {
+            restaurantId,
+            signupData: {
+                restaurantName,
+                country,
+                businessPhone,
+                businessAddress,
+                planName,
+            },
+        });
+        await tenantPrisma.restaurant.create({
+            data: {
+                id: restaurantId,
+                name: restaurantName,
+                country: country || 'India',
+                currency: country === 'United States'
+                    ? 'USD'
+                    : country === 'United Kingdom'
+                        ? 'GBP'
+                        : 'INR',
+                currencySymbol: country === 'United States'
+                    ? '$'
+                    : country === 'United Kingdom'
+                        ? '£'
+                        : '₹',
+                language: 'English',
+                theme: 'light',
+                notifications: true,
+                autoBackup: false,
+                planId: planName,
+                address: businessAddress,
+                phone: businessPhone,
+            },
+        });
+        // 12. Seed default categories
         const defaultCategories = [
-            { name: 'Appetizers', color: '#3B82F6', type: 'food' },
-            { name: 'Main Course', color: '#8B5CF6', type: 'food' },
-            { name: 'Desserts', color: '#EC4899', type: 'food' },
-            { name: 'Beverages', color: '#14B8A6', type: 'beverage' },
-            { name: 'Alcohol', color: '#F97316', type: 'beverage' },
+            { name: 'Starters', color: '#F97316', type: 'menu' },
+            { name: 'Main Course', color: '#2563EB', type: 'menu' },
+            { name: 'Desserts', color: '#EC4899', type: 'menu' },
+            { name: 'Beverages', color: '#0EA5E9', type: 'menu' },
+            { name: 'Utilities', color: '#14B8A6', type: 'expense' },
             { name: 'Staff Salaries', color: '#F59E0B', type: 'expense' },
         ];
-        console.info('[Signup] Step 10: Seeding default categories', {
+        console.info('[Signup] Seeding default categories', {
             restaurantId,
             count: defaultCategories.length,
         });
         await tenantPrisma.category.createMany({
             data: defaultCategories,
         });
-        console.info('[Signup] Default categories seeded successfully', {
-            restaurantId,
-            count: defaultCategories.length,
-        });
+        // 13. Seed default tables
         const defaultTables = Array.from({ length: 6 }).map((_, index) => ({
             number: index + 1,
             capacity: index < 4 ? 4 : 6,
             status: 'FREE',
         }));
-        console.info('[Signup] Step 11: Seeding default tables', {
+        console.info('[Signup] Seeding default tables', {
             restaurantId,
             count: defaultTables.length,
         });
-        await tenantPrisma.table.createMany({ data: defaultTables });
-        console.info('[Signup] Default tables seeded successfully', {
-            restaurantId,
-            count: defaultTables.length,
+        await tenantPrisma.table.createMany({
+            data: defaultTables,
         });
-        console.info('[Signup] Step 12: Creating tenant record in master DB', { restaurantId });
-        const masterDbUrl = `postgresql://${encodeURIComponent(masterDbUser)}:${encodeURIComponent(masterDbPass)}@${masterDbHost}:${masterDbPort}/master-db?schema=public&sslmode=no-verify`;
-        const { PrismaClient } = await Promise.resolve().then(() => __importStar(require('@prisma/client')));
-        const masterPrisma = new PrismaClient({
-            datasources: {
-                db: {
-                    url: masterDbUrl,
-                },
-            },
-        });
-        const newTenant = await masterPrisma.tenant.create({
-            data: {
-                id: restaurantId,
-                name: restaurantName,
-                email,
-                planId,
-                posType: posType || 'standard',
-                country: country || 'IN',
-                businessAddress: businessAddress || '',
-                businessPhone: businessPhone || '',
-                useRedis: normalizedUseRedis,
-                dbName,
-                dbUser,
-                dbPassword,
-                dbHost: masterDbHost,
-                dbPort: masterDbPort,
-                adminUserId: adminUser.id,
-                isActive: true,
-            },
-        });
-        await masterPrisma.$disconnect();
-        console.info('[Signup] Tenant record saved to master DB successfully', {
-            restaurantId: newTenant.id,
-        });
-        console.info('[Signup] Step 13: Generating JWT token', { restaurantId });
-        const token = jsonwebtoken_1.default.sign({
-            restaurantId: newTenant.id,
-            staffId: adminUser.id,
-            roleId: adminRole.id,
-            email: adminUser.email,
-        }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '7d' });
-        console.info('[Signup] ✅ SIGNUP SUCCESSFUL', {
+        console.info('[Signup] Signup successful', {
             restaurantId,
             email,
-            message: 'All data saved successfully to both master and tenant databases',
+            message: 'All signup data saved to both master DB and tenant DB',
         });
         return res.status(201).json({
             message: 'Restaurant created successfully!',
-            restaurantId: newTenant.id,
-            token,
-            adminUser: {
-                id: adminUser.id,
-                name: adminUser.name,
-                email: adminUser.email,
-            },
+            restaurantId: newTenantId,
         });
     }
     catch (error) {
-        console.error('[Signup] ❌ SIGNUP FAILED', {
+        console.error('[Signup] Failed', {
             restaurantId,
             email,
             error: error === null || error === void 0 ? void 0 : error.message,
             stack: error === null || error === void 0 ? void 0 : error.stack,
         });
         if (restaurantId && dbName && dbUser && dbPassword) {
-            console.log('[Signup] Attempting to clean up resources for failed signup', { restaurantId });
+            console.log('[Signup] Attempting to clean up resources for failed signup of restaurantId', restaurantId);
             try {
                 const { masterDbUser, masterDbPass, masterDbHost, masterDbPort } = await loadMasterDbConfig();
                 await (0, dbManager_1.dropTenantDatabaseAndUser)(dbName, dbUser, masterDbUser, masterDbPass, masterDbHost, masterDbPort);
-                console.log('[Signup] Cleanup successful - database and user removed', { restaurantId });
                 try {
                     await axios_1.default.delete(`${ADMIN_BASE_URL}/api/tenants/${restaurantId}`);
                 }
-                catch (_err) {
-                    // Ignore cleanup API errors
+                catch (_f) {
+                    // ignore cleanup API errors
                 }
+                console.log('[Signup] Cleanup successful for restaurantId', restaurantId);
             }
             catch (cleanupError) {
-                console.error('[Signup] CRITICAL: Cleanup failed - manual intervention needed', {
-                    restaurantId,
-                    dbName,
-                    dbUser,
-                    error: cleanupError.message,
-                });
+                console.error('[Signup] CRITICAL: Failed to clean up resources for restaurantId', restaurantId, cleanupError);
             }
         }
         return res.status(500).json({
@@ -320,4 +321,7 @@ async function signup(req, res) {
         });
     }
 }
+exports.default = {
+    signup,
+};
 //# sourceMappingURL=signup.js.map
