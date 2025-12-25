@@ -1,107 +1,3 @@
-// import { createTenantUserAndDatabase, dropTenantDatabaseAndUser } from '../services/tenantDbService';
-// import { PrismaClient as TenantPrismaClient } from '../generated/tenant';
-
-// import { getParameter } from "./awsSecrets";
-// import { getSecret } from "./awsSecretsManager";
-
-
-// // Cache for Prisma Clients
-// const prismaClients: Record<string, TenantPrismaClient> = {};
-
-// function encode(val: string) {
-//   return encodeURIComponent(val);
-// }
-
-// //
-// // Build a valid psql connection
-// //
-// // psql logic removed. Use pg service instead.
-
-// //
-// // Tenant Prisma Client
-// //
-// export function getTenantPrismaClientWithParams(
-//   dbName: string,
-//   dbUser: string,
-//   dbPass: string,
-//   dbHost: string,
-//   dbPort: string
-// ): TenantPrismaClient {
-//   if (prismaClients[dbName]) return prismaClients[dbName];
-
-//   const safePass = encode(dbPass);
-//   const url = `postgresql://${dbUser}:${safePass}@${dbHost}:${dbPort}/${dbName}?schema=public&sslmode=require`;
-
-//   process.env.DATABASE_URL = url;
-//   process.env.DATABASE_URL_TENANT = url;
-
-//   const client = new TenantPrismaClient({
-//     datasources: { db: { url } }
-//   });
-
-//   prismaClients[dbName] = client;
-//   return client;
-// }
-
-// //
-// // Create Tenant DB + User
-// export async function createTenantDatabaseAndUser(
-//   dbName: string,
-//   tenantUser: string,
-//   tenantPass: string,
-//   rootUser: string,
-//   rootPass: string,
-//   host: string,
-//   port: string
-// ) {
-//   // Use pg service for DB/user creation
-//   await createTenantUserAndDatabase({
-//     dbName,
-//     dbUser: tenantUser,
-//     dbPassword: tenantPass,
-//   });
-// }
-
-// //
-// // Run Prisma migrations for tenant
-// //
-// export async function runMigrationsForTenant(
-//   dbName: string,
-//   rootUser: string,
-//   rootPass: string,
-//   host: string,
-//   port: string
-// ) {
-//   const safePass = encode(rootPass);
-//   const url = `postgresql://${rootUser}:${safePass}@${host}:${port}/${dbName}?schema=public&sslmode=require`;
-//   console.log("⚠️ MIGRATION URL:", url);
-//   process.env.DATABASE_URL = url;
-//   process.env.DATABASE_URL_TENANT = url;
-//   // Migration logic should be implemented here if needed.
-// }
-
-// //
-// // Drop Tenant DB
-// export async function dropTenantDatabaseAndUserWrapper(
-//   dbName: string,
-//   tenantUser: string,
-//   rootUser: string,
-//   rootPass: string,
-//   host: string,
-//   port: string
-// ) {
-//   // Use pg service for DB/user cleanup
-//   await dropTenantDatabaseAndUser({
-//     dbName,
-//     dbUser: tenantUser,
-//   });
-// }
-// export { dropTenantDatabaseAndUserWrapper as dropTenantDatabaseAndUser };
-
-
-
-/** @format */
-
 import { createTenantUserAndDatabase, dropTenantDatabaseAndUser } from '../services/tenantDbService';
 import { PrismaClient as TenantPrismaClient } from '../generated/tenant';
 import { runTenantMigration } from './runTenantMigration';
@@ -114,7 +10,7 @@ function encode(val: string) {
 }
 
 //
-// Tenant Prisma Client
+// Tenant Prisma Client with all 5 parameters (CRITICAL FIX)
 //
 export function getTenantPrismaClientWithParams(
   dbName: string,
@@ -123,10 +19,18 @@ export function getTenantPrismaClientWithParams(
   dbHost: string,
   dbPort: string
 ): TenantPrismaClient {
-  if (prismaClients[dbName]) return prismaClients[dbName];
+  const cacheKey = dbName;
+
+  if (prismaClients[cacheKey]) {
+    console.log('[dbManager] Using cached Prisma client for tenant database:', dbName);
+    return prismaClients[cacheKey];
+  }
 
   const safePass = encode(dbPass);
   const url = `postgresql://${dbUser}:${safePass}@${dbHost}:${dbPort}/${dbName}?schema=public&sslmode=require`;
+
+  console.log('[dbManager] Creating new Prisma client for:', dbName);
+  console.log('[dbManager] Database connection details - Host:', dbHost, 'Port:', dbPort, 'Database:', dbName);
 
   // Keep envs in sync for Prisma tools that might read DATABASE_URL
   process.env.DATABASE_URL = url;
@@ -136,7 +40,8 @@ export function getTenantPrismaClientWithParams(
     datasources: { db: { url } },
   });
 
-  prismaClients[dbName] = client;
+  prismaClients[cacheKey] = client;
+  console.log('[dbManager] Prisma client created and cached for:', dbName);
   return client;
 }
 
@@ -152,17 +57,38 @@ export async function createTenantDatabaseAndUser(
   host: string,
   port: string
 ) {
-  // rootUser/rootPass/host/port are kept for signature compatibility,
-  // but creation is delegated to tenantDbService, which uses its own master config.
-  await createTenantUserAndDatabase({
+  console.info('[dbManager] Creating tenant database and user', {
     dbName,
-    dbUser: tenantUser,
-    dbPassword: tenantPass,
+    tenantUser,
+    host,
+    port,
   });
+
+  try {
+    // rootUser/rootPass/host/port are kept for signature compatibility,
+    // but creation is delegated to tenantDbService, which uses its own master config.
+    await createTenantUserAndDatabase({
+      dbName,
+      dbUser: tenantUser,
+      dbPassword: tenantPass,
+    });
+
+    console.info('[dbManager] Tenant database and user created successfully', {
+      dbName,
+      tenantUser,
+    });
+  } catch (error: any) {
+    console.error('[dbManager] Failed to create tenant database and user', {
+      dbName,
+      tenantUser,
+      error: error.message,
+    });
+    throw error;
+  }
 }
 
 //
-// Run Prisma migrations for tenant
+// Run Prisma migrations for tenant (WITH AWAIT - CRITICAL FIX)
 //
 export async function runMigrationsForTenant(
   dbName: string,
@@ -171,14 +97,22 @@ export async function runMigrationsForTenant(
   host: string,
   port: string
 ) {
-  console.info('[dbManager] Running migrations for tenant:', dbName);
+  console.info('[dbManager] Starting migrations for tenant:', dbName);
 
   try {
-    // Call the async migration function with connection details
+    // IMPORTANT: This is async and MUST be awaited in the calling code
+    console.info('[dbManager] Calling runTenantMigration with connection details', {
+      dbName,
+      host,
+      port,
+    });
+
     await runTenantMigration(dbName, rootUser, rootPass, host, port);
+
     console.info('[dbManager] Migrations completed successfully for:', dbName);
   } catch (error: any) {
-    console.error('[dbManager] Migration execution failed:', error.message);
+    console.error('[dbManager] Migration execution failed for:', dbName);
+    console.error('[dbManager] Error details:', error.message);
     throw new Error(`Failed to run migrations for ${dbName}: ${error.message}`);
   }
 }
@@ -194,11 +128,56 @@ export async function dropTenantDatabaseAndUserWrapper(
   host: string,
   port: string
 ) {
-  // rootUser/rootPass/host/port kept for compatibility; actual drop uses tenantDbService
-  await dropTenantDatabaseAndUser({
+  console.info('[dbManager] Dropping tenant database and user', {
     dbName,
-    dbUser: tenantUser,
+    tenantUser,
+    host,
+    port,
   });
+
+  try {
+    // rootUser/rootPass/host/port kept for compatibility; actual drop uses tenantDbService
+    await dropTenantDatabaseAndUser({
+      dbName,
+      dbUser: tenantUser,
+    });
+
+    console.info('[dbManager] Tenant database and user dropped successfully', {
+      dbName,
+      tenantUser,
+    });
+  } catch (error: any) {
+    console.error('[dbManager] Failed to drop tenant database and user', {
+      dbName,
+      tenantUser,
+      error: error.message,
+    });
+    throw error;
+  }
 }
 
 export { dropTenantDatabaseAndUserWrapper as dropTenantDatabaseAndUser };
+
+//
+// Clear Prisma Client Cache (Helper function)
+//
+export function clearPrismaClientCache(): void {
+  console.log('[dbManager] Clearing Prisma client cache');
+  prismaClients.forEach((client, key) => {
+    client
+      .$disconnect()
+      .then(() => console.log(`[dbManager] Disconnected client for ${key}`))
+      .catch((err: any) => console.error(`[dbManager] Error disconnecting ${key}:`, err));
+  });
+  Object.keys(prismaClients).forEach((key) => delete prismaClients[key]);
+}
+
+//
+// Get Prisma Client Cache Stats (Helper function)
+//
+export function getPrismaClientStats() {
+  return {
+    cachedClients: Object.keys(prismaClients),
+    count: Object.keys(prismaClients).length,
+  };
+}
